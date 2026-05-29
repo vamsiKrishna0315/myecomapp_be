@@ -1,0 +1,143 @@
+@extends('driver.layout')
+
+@section('title', 'Driver Login')
+
+@section('content')
+<div class="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-green-50 to-white">
+    <div class="w-full max-w-md">
+        <!-- Logo / App Name -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-green-600 rounded-full mb-4">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Driver App</h1>
+            <p class="text-gray-600 mt-2">Login to continue</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="bg-white rounded-2xl shadow-xl p-6" x-data="loginForm()">
+            <form @submit.prevent="submitLogin()">
+                <!-- Phone Number Input -->
+                <div class="mb-6">
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                        </div>
+                        <input
+                            type="tel"
+                            id="phone"
+                            x-model="phone"
+                            placeholder="Enter your phone number"
+                            class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-600 focus:ring-2 focus:ring-green-200 transition-all"
+                            required
+                            pattern="[0-9]{10}"
+                            maxlength="10"
+                        >
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Enter 10-digit mobile number</p>
+                </div>
+
+                <!-- Error Message -->
+                <div x-show="errorMessage" x-transition class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm text-red-600" x-text="errorMessage"></p>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                    type="submit"
+                    :disabled="loading"
+                    class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                    <span x-show="!loading">Send OTP</span>
+                    <span x-show="loading" class="flex items-center">
+                        <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Sending...
+                    </span>
+                </button>
+            </form>
+
+            <!-- Forgot Password Link -->
+            <div class="mt-6 text-center">
+                <a href="{{ route('driver.forgot-password') }}" class="text-sm text-green-600 hover:text-green-700 font-medium">
+                    Forgot Password?
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <p class="text-center text-xs text-gray-500 mt-6">
+            By continuing, you agree to our Terms of Service
+        </p>
+    </div>
+</div>
+
+@endsection
+
+@section('scripts')
+<script>
+    function loginForm() {
+        return {
+            phone: '',
+            loading: false,
+            errorMessage: '',
+
+            async submitLogin() {
+                this.errorMessage = '';
+
+                // Validate phone
+                if (this.phone.length !== 10) {
+                    this.errorMessage = 'Please enter a valid 10-digit phone number';
+                    return;
+                }
+
+                this.loading = true;
+
+                try {
+                    // API call to send OTP
+                    const response = await fetch('/api/driver/send-otp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            phone: this.phone
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        // Store phone in session storage
+                        sessionStorage.setItem('driver_phone', this.phone);
+                        sessionStorage.removeItem('driver_otp_debug');
+
+                        if (data.otp) {
+                            sessionStorage.setItem('driver_otp_debug', data.otp);
+                        }
+
+                        // Redirect to OTP page
+                        window.location.href = '{{ route("driver.otp") }}';
+                    } else {
+                        this.errorMessage = data.message || 'Failed to send OTP. Please try again.';
+                    }
+                } catch (error) {
+                    this.errorMessage = 'Network error. Please check your connection.';
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+</script>
+@endsection

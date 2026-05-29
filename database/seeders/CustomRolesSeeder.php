@@ -1,0 +1,151 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+
+class CustomRolesSeeder extends Seeder
+{
+    public function run()
+    {
+        // Only create roles if they don't already exist
+        $this->command->info('Creating roles that match your user form...');
+        
+        // Define roles exactly as you have them in your user form
+        $roles = [
+            'admin' => [
+                'description' => 'Admin - Full system access',
+                'permissions' => [] // Will get all permissions via super_admin role
+            ],
+            
+            'store_admin' => [
+                'description' => 'Store Admin - Store management',
+                'permissions' => [
+                    // Product management
+                    'ViewAny:Products',
+                    'View:Products',
+                    'Create:Products',
+                    'Update:Products',
+                    'Delete:Products',
+                    
+                    // Category management
+                    'ViewAny:Category',
+                    'View:Category',
+                    'Create:Category',
+                    'Update:Category',
+                    
+                    // Order management
+                    'ViewAny:Orders',
+                    'View:Orders',
+                    'Update:Orders',
+                    'ViewAny:OrderItems',
+                    'View:OrderItems',
+                    
+                    // Customer management
+                    'ViewAny:Customer',
+                    'View:Customer',
+                    'Update:Customer',
+                    
+                    // Store management
+                    'ViewAny:Store',
+                    'View:Store',
+                    'Update:Store',
+                    
+                    // Analytics widgets
+                    'View:CustomerStatsOverviewWidget',
+                    'View:OrdersStatsOverviewWidget',
+                    'View:TotalOrdersWidget',
+                    'View:TopSellingProductsWidget',
+                    'View:TopCustomersWidget',
+                ]
+            ],
+            
+            'store_driver' => [
+                'description' => 'Store Driver - Delivery management',
+                'permissions' => [
+                    // Order delivery management
+                    'ViewAny:Orders',
+                    'View:Orders',
+                    'Update:Orders',
+                    'ViewAny:OrderStatusTracking',
+                    'View:OrderStatusTracking',
+                    'Create:OrderStatusTracking',
+                    'Update:OrderStatusTracking',
+                    
+                    // Customer info for delivery
+                    'View:Customer',
+                    
+                    // Driver specific
+                    'View:Driver',
+                    'Update:Driver',
+                    
+                    // Feedback viewing (NEW)
+                    'ViewAny:Feedback',
+                    'View:Feedback',
+                    
+                    // Driver widgets
+                    'View:DriverStatsOverviewWidget',
+                    'View:DriverAnalyticsWidget',
+                ]
+            ],
+            
+            'store_vendor' => [
+                'description' => 'Store Vendor - Product and store management',
+                'permissions' => [
+                    // Product management for their store
+                    'ViewAny:Products',
+                    'View:Products',
+                    'Create:Products',
+                    'Update:Products',
+                    
+                    // Their orders only
+                    'ViewAny:Orders',
+                    'View:Orders',
+                    'Update:Orders',
+                    
+                    // Store info
+                    'View:Store',
+                    'Update:Store',
+                    
+                    // Basic widgets
+                    'View:OrdersStatsOverviewWidget',
+                    'View:TotalOrdersWidget',
+                    'View:TopSellingProductsWidget',
+                ]
+            ],
+            
+            'user' => [
+                'description' => 'Regular User - Limited access',
+                'permissions' => [
+                    // Basic user permissions - very limited
+                    'View:Customer', // Can view their own profile
+                ]
+            ]
+        ];
+
+        foreach ($roles as $roleName => $roleData) {
+            // Only create if it doesn't exist
+            if (!Role::where('name', $roleName)->exists()) {
+                // Create role
+                $role = Role::create([
+                    'name' => $roleName, 
+                    'guard_name' => 'web'
+                ]);
+
+                // Get existing permissions and filter only those that exist
+                $existingPermissions = Permission::whereIn('name', $roleData['permissions'])->pluck('name')->toArray();
+                
+                // Sync permissions (only assign permissions that actually exist)
+                if (!empty($existingPermissions)) {
+                    $role->syncPermissions($existingPermissions);
+                }
+
+                $this->command->info("Created role: {$roleName} with " . count($existingPermissions) . " permissions");
+            } else {
+                $this->command->info("Role {$roleName} already exists, skipping...");
+            }
+        }
+    }
+}

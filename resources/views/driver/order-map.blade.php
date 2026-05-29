@@ -1,0 +1,270 @@
+@extends('driver.layout')
+
+@section('title', 'Live Order Map')
+
+@section('content')
+<div class="min-h-screen bg-gray-100" x-data="driverOrderMap('{{ $orderId }}')" x-init="init()">
+    <header class="sticky top-0 z-40 bg-white shadow-sm">
+        <div class="flex items-center justify-between px-4 py-4">
+            <div class="flex items-center">
+                <a href="{{ route('driver.order-detail', $orderId) }}" class="mr-3">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800">Live Order Map</h1>
+                    <p class="text-sm text-gray-500" x-text="mapData.order.id || '{{ $orderId }}'"></p>
+                </div>
+            </div>
+            <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full" x-text="mapData.order.status_label || 'Loading'"></span>
+        </div>
+    </header>
+
+    <div class="flex flex-col min-h-[calc(100vh-73px)]">
+        <div class="h-[72vh] bg-gray-200" x-ref="mapCanvas"></div>
+
+        <div class="flex-1 bg-white rounded-t-3xl shadow-2xl -mt-6 relative z-10 px-4 py-5">
+            <div x-show="errorMessage" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-sm text-red-600" x-text="errorMessage"></p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="rounded-2xl bg-blue-50 p-3">
+                    <p class="text-xs text-gray-500">ETA</p>
+                    <p class="text-lg font-bold text-blue-700" x-text="mapData.eta.available ? `${mapData.eta.minutes} min` : 'N/A'"></p>
+                </div>
+                <div class="rounded-2xl bg-green-50 p-3">
+                    <p class="text-xs text-gray-500">Distance</p>
+                    <p class="text-lg font-bold text-green-700" x-text="mapData.eta.distance_km ? `${mapData.eta.distance_km} km` : 'N/A'"></p>
+                </div>
+                <div class="rounded-2xl bg-amber-50 p-3">
+                    <p class="text-xs text-gray-500">Updated</p>
+                    <p class="text-sm font-bold text-amber-700" x-text="relativeUpdatedAt()"></p>
+                </div>
+            </div>
+
+            <div class="space-y-3 mb-4">
+                <div class="rounded-2xl border border-gray-100 p-3">
+                    <p class="text-xs text-gray-500">Pickup Store</p>
+                    <p class="font-semibold text-gray-800" x-text="mapData.vendor.name || 'Assigned Vendor'"></p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 p-3">
+                    <p class="text-xs text-gray-500">Delivery Address</p>
+                    <p class="font-semibold text-gray-800" x-text="mapData.order.delivery_address || 'N/A'"></p>
+                </div>
+                <div class="rounded-2xl border border-gray-100 p-3">
+                    <p class="text-xs text-gray-500">Products</p>
+                    <p class="font-semibold text-gray-800" x-text="mapData.order.product_summary || 'N/A'"></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button
+                    @click="openStatusUpdater()"
+                    class="py-3 px-4 bg-green-600 text-white font-semibold rounded-xl"
+                >
+                    Update Status
+                </button>
+                <a
+                    :href="`/driver/orders/${orderId}`"
+                    class="py-3 px-4 bg-gray-200 text-gray-800 font-semibold rounded-xl text-center"
+                >
+                    Order Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    function driverOrderMap(orderId) {
+        return {
+            orderId,
+            mapData: {
+                order: {},
+                vendor: {},
+                driver: {},
+                destination: {},
+                eta: { available: false, minutes: null, distance_km: null },
+                trail: [],
+            },
+            errorMessage: '',
+            map: null,
+            markers: {},
+            directionsRenderer: null,
+            refreshTimer: null,
+
+            init() {
+                this.checkAuth();
+                this.loadMapData();
+            },
+
+            checkAuth() {
+                const token = localStorage.getItem('driver_token');
+                if (!token) {
+                    driverLogout();
+                }
+            },
+
+            async loadMapData() {
+                const token = localStorage.getItem('driver_token');
+
+                try {
+                    const response = await fetch(`/api/driver/orders/${this.orderId}/map`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                        }
+                    });
+
+                    const data = await handleDriverApiResponse(response, 'Failed to load map data.');
+
+                    if (!data) {
+                        return;
+                    }
+
+                    if (data.error) {
+                        this.errorMessage = data.message;
+                        return;
+                    }
+
+                    this.errorMessage = '';
+                    this.mapData = data;
+                    this.$nextTick(() => this.renderMap());
+
+                    if (!this.refreshTimer) {
+                        this.refreshTimer = window.setInterval(() => {
+                            void this.loadMapData();
+                        }, 30000);
+                    }
+                } catch (error) {
+                    this.errorMessage = 'Network error. Please try again.';
+                }
+            },
+
+            renderMap() {
+                if (typeof google === 'undefined' || !this.$refs.mapCanvas) {
+                    return;
+                }
+
+                const center = {
+                    lat: Number(this.mapData.driver.lat ?? this.mapData.destination.lat ?? this.mapData.vendor.lat ?? 17.385),
+                    lng: Number(this.mapData.driver.lng ?? this.mapData.destination.lng ?? this.mapData.vendor.lng ?? 78.4867),
+                };
+
+                if (!this.map) {
+                    this.map = new google.maps.Map(this.$refs.mapCanvas, {
+                        center,
+                        zoom: 13,
+                        disableDefaultUI: true,
+                        zoomControl: true,
+                    });
+
+                    this.directionsRenderer = new google.maps.DirectionsRenderer({
+                        map: this.map,
+                        suppressMarkers: true,
+                        polylineOptions: {
+                            strokeColor: '#2563eb',
+                            strokeWeight: 6,
+                        },
+                    });
+                }
+
+                this.syncMarkers();
+                this.drawDirections();
+                this.drawTrail();
+            },
+
+            syncMarkers() {
+                const markers = [
+                    ['driver', this.mapData.driver, 'D'],
+                    ['vendor', this.mapData.vendor, 'V'],
+                    ['destination', this.mapData.destination, 'C'],
+                ];
+
+                markers.forEach(([key, point, label]) => {
+                    if (point?.lat == null || point?.lng == null) {
+                        return;
+                    }
+
+                    const position = { lat: Number(point.lat), lng: Number(point.lng) };
+
+                    if (!this.markers[key]) {
+                        this.markers[key] = new google.maps.Marker({
+                            position,
+                            label,
+                            map: this.map,
+                        });
+                    } else {
+                        this.markers[key].setPosition(position);
+                    }
+                });
+            },
+
+            drawDirections() {
+                if (!this.mapData.driver?.lat || !this.mapData.driver?.lng || !this.mapData.destination?.lat || !this.mapData.destination?.lng) {
+                    return;
+                }
+
+                const directionsService = new google.maps.DirectionsService();
+                directionsService.route({
+                    origin: { lat: Number(this.mapData.driver.lat), lng: Number(this.mapData.driver.lng) },
+                    destination: { lat: Number(this.mapData.destination.lat), lng: Number(this.mapData.destination.lng) },
+                    travelMode: google.maps.TravelMode.DRIVING,
+                }, (result, status) => {
+                    if (status === 'OK') {
+                        this.directionsRenderer.setDirections(result);
+                    }
+                });
+            },
+
+            drawTrail() {
+                if (!Array.isArray(this.mapData.trail) || this.mapData.trail.length === 0) {
+                    return;
+                }
+
+                if (this.trailPath) {
+                    this.trailPath.setMap(null);
+                }
+
+                this.trailPath = new google.maps.Polyline({
+                    path: this.mapData.trail.map(point => ({
+                        lat: Number(point.lat),
+                        lng: Number(point.lng),
+                    })),
+                    geodesic: true,
+                    strokeColor: '#16a34a',
+                    strokeOpacity: 0.85,
+                    strokeWeight: 4,
+                    map: this.map,
+                });
+            },
+
+            relativeUpdatedAt() {
+                if (!this.mapData.driver.location_updated_at) {
+                    return 'N/A';
+                }
+
+                const updatedAt = new Date(this.mapData.driver.location_updated_at);
+                const diffSeconds = Math.max(0, Math.floor((Date.now() - updatedAt.getTime()) / 1000));
+
+                if (diffSeconds < 60) {
+                    return `${diffSeconds}s ago`;
+                }
+
+                return `${Math.floor(diffSeconds / 60)}m ago`;
+            },
+
+            openStatusUpdater() {
+                window.location.href = `/driver/orders/${this.orderId}`;
+            }
+        }
+    }
+</script>
+@if(config('services.google.maps.api_key'))
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps.api_key') }}"></script>
+@endif
+@endsection
