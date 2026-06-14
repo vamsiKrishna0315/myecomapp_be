@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\ProductSlugSupport;
 use App\Traits\HasMetaTag;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 final class Product extends Model
 {
@@ -160,7 +160,7 @@ final class Product extends Model
 
     public function getSeoCanonicalUrl(): string
     {
-        return url('/product/'.$this->getKey());
+        return url('/product/'.$this->getKey().'-'.$this->slug);
     }
 
     /**
@@ -325,14 +325,16 @@ final class Product extends Model
     {
         parent::boot();
 
-        self::creating(function ($product) {
+        self::saving(function (self $product) {
             if (empty($product->sku)) {
                 $product->sku = self::generateSKU($product->category_id);
             }
 
-            if (empty($product->slug)) {
-                $product->slug = Str::slug($product->name);
-            }
+            $product->slug = ProductSlugSupport::normalizeForSave(
+                $product->slug,
+                $product->name,
+                $product->exists ? (int) $product->getKey() : null
+            );
 
             if (! isset($product->status) || $product->status === '' || $product->status === null) {
                 $product->status = 'active';
@@ -347,7 +349,7 @@ final class Product extends Model
             }
         });
 
-        self::created(function ($product) {
+        self::saved(function (self $product) {
             $product->updateMeta([
                 'meta_title' => $product->meta_title ?? $product->name,
                 'meta_description' => $product->meta_description ?? $product->description,

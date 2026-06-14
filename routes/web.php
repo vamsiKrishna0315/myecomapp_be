@@ -23,7 +23,7 @@ Route::prefix('api/google-places')->group(function () {
 // Driver Web App Routes
 Route::prefix('driver')->name('driver.')->group(function () {
     // Auth routes
-    Route::get('/login', [DriverController::class, 'login'])->name('login');
+    Route::get('/', [DriverController::class, 'login'])->name('login');
     Route::get('/otp', [DriverController::class, 'otp'])->name('otp');
     Route::get('/forgot-password', [DriverController::class, 'forgotPassword'])->name('forgot-password');
 

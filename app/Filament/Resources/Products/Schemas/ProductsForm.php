@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Products\Schemas;
 
+use App\Support\ProductSlugSupport;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -28,11 +29,25 @@ final class ProductsForm
                                 TextInput::make('name')
                                     ->required()
                                     ->maxLength(255)
-                                    ->live(onBlur: true),
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        if (blank($get('slug'))) {
+                                            $set('slug', ProductSlugSupport::slugify((string) $state));
+                                        }
+                                    }),
 
                                 TextInput::make('slug')
+                                    ->required()
                                     ->maxLength(255)
-                                    ->unique(ignoreRecord: true),
+                                    ->unique(ignoreRecord: true)
+                                    ->live(onBlur: true)
+                                    ->dehydrateStateUsing(fn ($state, $get) => ProductSlugSupport::slugify(
+                                        filled($state) ? (string) $state : (string) $get('name')
+                                    ))
+                                    ->helperText(fn ($get) => ProductSlugSupport::qualitySummary(
+                                        filled($get('slug')) ? (string) $get('slug') : (string) $get('name')
+                                    ))
+                                    ->rule('regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'),
 
                                 Select::make('category_id')
                                     ->relationship('category', 'category_name')

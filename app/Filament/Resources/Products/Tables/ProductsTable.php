@@ -29,6 +29,10 @@ final class ProductsTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('slug')
+                    ->searchable()
+                    ->toggleable(),
+
                 TextColumn::make('category.category_name')
                     ->searchable()
                     ->sortable(),
