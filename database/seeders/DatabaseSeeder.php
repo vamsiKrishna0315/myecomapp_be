@@ -15,6 +15,7 @@ final class DatabaseSeeder extends Seeder
             ShieldSeeder::class,
             CustomRolesSeeder::class,
             UsersSeeder::class,
+            SiteDataSeeder::class,
         ]);
     }
 }
