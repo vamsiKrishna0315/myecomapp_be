@@ -27,11 +27,11 @@ class CustomRolesSeeder extends Seeder
                 'description' => 'Store Admin - Store management',
                 'permissions' => [
                     // Product management
-                    'ViewAny:Products',
-                    'View:Products',
-                    'Create:Products',
-                    'Update:Products',
-                    'Delete:Products',
+                    'ViewAny:Product',
+                    'View:Product',
+                    'Create:Product',
+                    'Update:Product',
+                    'Delete:Product',
                     
                     // Category management
                     'ViewAny:Category',
@@ -98,10 +98,10 @@ class CustomRolesSeeder extends Seeder
                 'description' => 'Store Vendor - Product and store management',
                 'permissions' => [
                     // Product management for their store
-                    'ViewAny:Products',
-                    'View:Products',
-                    'Create:Products',
-                    'Update:Products',
+                    'ViewAny:Product',
+                    'View:Product',
+                    'Create:Product',
+                    'Update:Product',
                     
                     // Their orders only
                     'ViewAny:Orders',

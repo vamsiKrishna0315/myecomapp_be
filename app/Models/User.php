@@ -10,6 +10,8 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use QCod\Gamify\Gamify;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -23,7 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read CarbonInterface $created_at
  * @property-read CarbonInterface $updated_at
  */
-final class User extends Authenticatable implements MustVerifyEmail
+final class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     use Gamify, HasRoles;
 
@@ -113,5 +115,16 @@ final class User extends Authenticatable implements MustVerifyEmail
                 });
             }
         });
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        $panelId = $panel->getId();
+
+        return $this->hasAnyRole([
+            'super_admin',
+            'panel_user',
+            $panelId,
+        ]) || $this->user_role === $panelId;
     }
 }
