@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 final class UsersSeeder extends Seeder
 {
@@ -38,5 +40,11 @@ final class UsersSeeder extends Seeder
                 'updated_at' => '2025-10-24 13:10:51',
             ]
         );
+
+        $user = User::query()->where('email', 'admin@mail.com')->first();
+
+        if ($user && $user->user_role && Role::where('name', $user->user_role)->exists()) {
+            $user->syncRoles([$user->user_role]);
+        }
     }
 }

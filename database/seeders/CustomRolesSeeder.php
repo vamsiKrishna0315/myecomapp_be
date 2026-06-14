@@ -5,11 +5,14 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class CustomRolesSeeder extends Seeder
 {
     public function run()
     {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
         // Only create roles if they don't already exist
         $this->command->info('Creating roles that match your user form...');
         
@@ -17,7 +20,7 @@ class CustomRolesSeeder extends Seeder
         $roles = [
             'admin' => [
                 'description' => 'Admin - Full system access',
-                'permissions' => [] // Will get all permissions via super_admin role
+                'permissions' => [] // Synced to all generated permissions below
             ],
             
             'store_admin' => [
@@ -126,26 +129,20 @@ class CustomRolesSeeder extends Seeder
         ];
 
         foreach ($roles as $roleName => $roleData) {
-            // Only create if it doesn't exist
-            if (!Role::where('name', $roleName)->exists()) {
-                // Create role
-                $role = Role::create([
-                    'name' => $roleName, 
-                    'guard_name' => 'web'
-                ]);
+            $role = Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ]);
 
-                // Get existing permissions and filter only those that exist
-                $existingPermissions = Permission::whereIn('name', $roleData['permissions'])->pluck('name')->toArray();
-                
-                // Sync permissions (only assign permissions that actually exist)
-                if (!empty($existingPermissions)) {
-                    $role->syncPermissions($existingPermissions);
-                }
+            $permissionsToSync = $roleName === 'admin'
+                ? Permission::pluck('name')->all()
+                : Permission::whereIn('name', $roleData['permissions'])->pluck('name')->all();
 
-                $this->command->info("Created role: {$roleName} with " . count($existingPermissions) . " permissions");
-            } else {
-                $this->command->info("Role {$roleName} already exists, skipping...");
+            if (! empty($permissionsToSync)) {
+                $role->syncPermissions($permissionsToSync);
             }
+
+            $this->command->info("Synced role: {$roleName} with " . count($permissionsToSync) . ' permissions');
         }
     }
 }
