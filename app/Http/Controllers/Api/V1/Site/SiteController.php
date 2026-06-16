@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Site;
 
 use App\Http\Controllers\Api\V1\ResponseController;
-use App\Models\Banner;
 use App\Models\Category;
 use App\Models\FlashBanner;
 use App\Models\Feedback;
@@ -14,9 +13,14 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreContactInfo;
 use App\Models\WhyUs;
+use App\Services\Banners\BannerMediaService;
 
 final class SiteController extends ResponseController
 {
+    public function __construct(
+        private readonly BannerMediaService $bannerMediaService
+    ) {}
+
     /**
      * Get active banners
      *
@@ -24,11 +28,7 @@ final class SiteController extends ResponseController
      */
     public function getBanners()
     {
-        $banners = Banner::where('status', 1)
-            ->where('show_live', 1)
-            ->get();
-
-        return $banners ?? [];
+        return $this->bannerMediaService->activeBanners();
     }
 
     /**
@@ -122,9 +122,7 @@ final class SiteController extends ResponseController
     public function getAllSiteData()
     {
         $data = [
-            'banners' => Banner::where('status', 1)
-                ->where('show_live', 1)
-                ->get(),
+            'banners' => $this->bannerMediaService->activeBanners(),
             'categories' => Category::with([
                 'meta',
                 'products' => function ($q) {

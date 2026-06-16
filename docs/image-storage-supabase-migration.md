@@ -2,8 +2,8 @@
 
 ## Project Status
 
-Current Phase: Phase 2C - Media Storage Policy, Path Ownership, and Provider Parity
-Status: Implemented; runtime verification pending
+Current Phase: Phase 3 - Filament Upload Migration
+Status: In progress; implementation complete, verification pending
 Last Updated: 2026-06-14
 
 ---
@@ -23,7 +23,7 @@ Alternatives considered: Keep frontend path reconstruction; keep local public di
 Date: 2026-06-14
 Decision: Restrict media uploads to a closed set of public categories backed by an enum and a shared path policy.
 Reason: Uploads must not accept arbitrary user-controlled directories. The application should own the allowed object-key layout so local disk and Supabase stay in parity, while private media classes remain documented but unwritable until the privacy policy is defined.
-Impact: Upload callers must use `MediaCategory` values. Public media categories are `products`, `categories`, `banners`, `flash-banners`, `why-us`, `stores`, `cut-types`, `seo`, and `reviews`. Reserved future private categories are `drivers`, `licenses`, `insurance`, and `registrations`.
+Impact: Upload callers must use `MediaCategory` values. Public media categories are `products`, `categories`, `banners`, `flash-banners`, `why-us`, `stores`, `cut-types`, `product-cuts`, `seo`, and `reviews`. Document categories are `drivers`, `licenses`, `insurance`, `registrations`, and `user-documents`.
 Alternatives considered: Accept raw directory strings; infer directories from filenames; allow all categories by default. Each would weaken path ownership and increase migration risk.
 
 ### Decision 003
@@ -33,6 +33,14 @@ Decision: Share path normalization and object-key composition across both media 
 Reason: LocalProvider and SupabaseProvider must generate the same object key structure, reject traversal segments, and normalize leading slashes consistently so the migration can switch providers without changing the database contract.
 Impact: `publicUrl`, `delete`, and `exists` operate on normalized object keys only. The two providers now differ only in transport, not in path semantics.
 Alternatives considered: Duplicate normalization per provider; let the service and provider each define their own path rules; keep path cleanup in model accessors. All of these would allow drift.
+
+### Decision 004
+
+Date: 2026-06-14
+Decision: Centralize Filament upload wiring through a reusable helper that delegates file persistence and deletion to `MediaService`.
+Reason: Filament forms should describe the field intent, not storage paths. The helper keeps upload behavior consistent across resources while preserving the current local provider.
+Impact: Resource schemas now attach a shared helper instead of hardcoding `disk('public')` and `directory(...)`. The helper uses `MediaCategory` to choose the object-key prefix and keeps database values provider-neutral.
+Alternatives considered: Duplicate the upload hooks in every form; keep `disk('public')` and `directory(...)` in each resource; create custom per-resource save logic. Each would reintroduce drift.
 
 ---
 
@@ -505,7 +513,7 @@ Tasks:
 - [x] Decide public and private bucket layout.
 - [x] Map existing `public` disk behavior to provider-neutral object keys.
 - [x] Add a central media category enum and path policy.
-- [x] Restrict uploads to approved public categories only.
+- [x] Restrict uploads to approved media categories only.
 - [x] Keep LocalProvider and SupabaseProvider aligned on object-key structure.
 - [x] Add tests for URL generation, upload, delete, exists, invalid paths, and provider selection.
 
@@ -521,17 +529,32 @@ Tasks:
 - [x] Verify LocalProvider and SupabaseProvider generate the same object key structure.
 - [x] Add or update tests for URL generation, upload, delete, exists, invalid paths, and provider switching.
 
-Phase 3 - New Upload Flow
-[ ] Not started
-[ ] In progress
+Phase 3 - Filament Upload Migration
 [ ] Completed
+[x] In progress
+[ ] Not started
 
-Tasks:
+Audit findings:
 
-- [ ] Update Filament upload forms to use the media abstraction.
-- [ ] Ensure new uploads persist object keys, not raw URLs.
-- [ ] Generate URL fields at the model/resource boundary.
-- [ ] Add automated tests for upload and URL resolution.
+- `app/Filament/Resources/Products/Schemas/ProductsForm.php` now routes primary and gallery uploads through the shared media helper with `MediaCategory::Products`.
+- `app/Filament/Resources/Categories/Schemas/CategoriesForm.php` now routes category images through the shared media helper with `MediaCategory::Categories`.
+- `app/Filament/Resources/Banners/Schemas/BannerForm.php` now routes banner uploads through the shared media helper with `MediaCategory::Banners`.
+- `app/Filament/Resources/FlashBanners/Schemas/FlashBannerForm.php` now routes flash banner uploads through the shared media helper with `MediaCategory::FlashBanners`.
+- `app/Filament/Resources/WhyUs/Schemas/WhyUsForm.php` now routes why-us images through the shared media helper with `MediaCategory::WhyUs`.
+- `app/Filament/Resources/ProductCuts/Schemas/ProductCutForm.php` now routes product cut images through the shared media helper with `MediaCategory::ProductCuts`.
+- `app/Filament/Resources/Stores/Schemas/StoreForm.php` now routes store logo and favicon uploads through the shared media helper with `MediaCategory::Stores`.
+- `app/Filament/Resources/Drivers/Schemas/DriverForm.php` now routes driver profile and document uploads through the shared media helper with `MediaCategory::Drivers`, `MediaCategory::Licenses`, `MediaCategory::Registrations`, and `MediaCategory::Insurance`.
+- `app/Filament/Resources/Users/Schemas/UsersForm.php` now routes address proof uploads through the shared media helper with `MediaCategory::UserDocuments`.
+- `MediaService`, `LocalProvider`, `SupabaseProvider`, and `MediaUpload` now emit upload traces that include provider, category, bucket or disk, and normalized object keys so banner and product uploads can be traced end to end.
+- Banner reads now flow through a single `BannerMediaService` so the admin table and site API resolve banner URLs from the same provider-aware code path.
+- Banner deletes now route through a model observer that removes the banner object from the active media provider when the record is deleted.
+
+Phase 3 tasks:
+
+- [x] Wire Filament uploads through the media service helper.
+- [x] Preserve provider-neutral object keys for all uploads.
+- [x] Keep existing records and URLs working without changing API contracts.
+- [x] Add tests for the upload helper and migrated resources.
 
 Phase 4 - Existing Image Migration
 [ ] Not started
@@ -575,8 +598,11 @@ Tasks:
 - Added unit coverage for media provider selection, upload, URL generation, and deletion flows.
 - Hardened provider path normalization to reject traversal segments in media keys.
 - Added a shared media category enum and path policy for upload ownership.
-- Restricted uploads to approved public categories and reserved private categories for future use.
+- Added public and private media categories to the upload policy.
 - Kept both providers aligned on the same normalized object-key structure.
+- Added a reusable Filament upload helper backed by `MediaService`.
+- Migrated product, category, banner, flash banner, why-us, product cut, store, driver, and user document upload forms to the shared helper.
+- Added unit coverage for the Filament helper, common public categories, and expanded media service coverage for private-category uploads.
 
 ## Files modified:
 
@@ -589,7 +615,18 @@ Tasks:
 - `C:\Users\ADMIN\Herd\laravel-project\app\Providers\AppServiceProvider.php`
 - `C:\Users\ADMIN\Herd\laravel-project\app\Enums\MediaCategory.php`
 - `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\MediaPathPolicy.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Support\Filament\MediaUpload.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Products\Schemas\ProductsForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Categories\Schemas\CategoriesForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Banners\Schemas\BannerForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\FlashBanners\Schemas\FlashBannerForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\WhyUs\Schemas\WhyUsForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\ProductCuts\Schemas\ProductCutForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Stores\Schemas\StoreForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Drivers\Schemas\DriverForm.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Users\Schemas\UsersForm.php`
 - `C:\Users\ADMIN\Herd\laravel-project\tests\Unit\Services\Media\MediaServiceTest.php`
+- `C:\Users\ADMIN\Herd\laravel-project\tests\Unit\Support\Filament\MediaUploadTest.php`
 
 ## Reason:
 
@@ -599,7 +636,8 @@ Tasks:
 - Introduce a backend-only media abstraction while preserving current local-disk behavior by default.
 - Document the implementation state after landing the media abstraction work.
 - Close the traversal/path normalization gap in the new media layer.
-- Finish Phase 2C with a closed upload policy and provider parity guarantees.
+- Finish Phase 3 with a shared Filament upload helper and provider parity guarantees.
+- Remove Filament path/directory assumptions while preserving local storage behavior.
 
 ## Verification:
 
@@ -609,41 +647,35 @@ Tasks:
 - Confirmed there is no existing `config/media.php`.
 - Confirmed `AppServiceProvider` already owns service binding and is the safest registration point for the new media service.
 - Code implementation is present in the repo; runtime verification is still pending in this shell because the `php` executable is not available on PATH.
-- Phase 2C adds a closed upload policy so Phase 3 can assume stable media categories and object-key structure.
+- Phase 3 code has been migrated, but these changes still need runtime verification in a PHP-enabled shell.
 
 ## Security Considerations
 
-- Uploads now accept only `MediaCategory` enum values and reject private categories.
+- Uploads now accept only `MediaCategory` enum values and route to a controlled object-key prefix.
 - Traversal segments such as `..` are rejected before provider calls.
 - Absolute URI schemes are rejected by the shared path policy.
 - Local and Supabase providers now normalize keys the same way, which reduces drift and accidental path spoofing.
-- Reserved private categories are documented now, but writes are intentionally blocked until a separate private-media policy exists.
+- Private document categories are documented and wired for driver and user-document uploads.
 
 ## Test Coverage
 
-- `tests/Unit/Services/Media/MediaServiceTest.php` now covers provider selection, URL generation, upload, delete, exists, invalid traversal paths, and private-category rejection.
+- `tests/Unit/Services/Media/MediaServiceTest.php` now covers provider selection, URL generation, upload, delete, exists, invalid traversal paths, and private-category uploads.
+- `tests/Unit/Support/Filament/MediaUploadTest.php` covers Filament helper wiring, common public categories, single-file uploads, multiple uploads, driver documents, and user-document uploads.
 - The Supabase test verifies request URLs and object-key parity with the local provider.
 - The local test verifies compatibility with the public disk behavior and storage cleanup.
+- The Filament helper tests verify the upload helper keeps the storage path off the form definition.
 
 ## Remaining Blockers
 
 - Full Laravel test execution is still pending in this shell because `php` is not available on PATH.
-- Phase 3 is intentionally deferred until the upload forms and model accessors are ready for the new policy.
+- Phase 3 now needs runtime verification in a PHP-enabled shell before the next phase is approved.
 
-## Phase 2 Planned Files
+## Phase 3 Implementation Notes
 
-- `C:\Users\ADMIN\Herd\laravel-project\config\media.php`
-- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\MediaService.php`
-- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\MediaProviderInterface.php`
-- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\Providers\LocalProvider.php`
-- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\Providers\SupabaseProvider.php`
-- `C:\Users\ADMIN\Herd\laravel-project\app\Providers\AppServiceProvider.php`
-
-## Phase 2 Implementation Notes
-
-- Local provider mirrors the current `public` disk URL generation and storage semantics.
-- Supabase provider is configured for a public bucket and is not yet wired into any domain model or upload form.
-- The backend now has a single service entry point for media operations, but business code is unchanged for this phase.
+- The upload destination is now determined through `MediaCategory` and a shared Filament helper instead of hardcoded directories.
+- The current active provider remains local, so the migration is invisible to the frontend and API consumers.
+- Driver and user-document uploads are routed through the same path policy and provider abstraction as public media.
+- Supabase Storage does not require physical folders; keys such as `banners/<filename>` and `products/<filename>` are virtual prefixes created by the object key, and the logs now show the exact prefix being written.
 
 ---
 
@@ -651,34 +683,72 @@ Tasks:
 
 Current progress:
 
-- The image-storage audit is complete and documented.
-- Phase 2 is now approved for backend infrastructure and media abstraction only.
-- The backend currently uses local public-disk semantics plus Eloquent accessors for URL generation.
-- The frontend still has fallback image URL builders and one hardcoded `/storage` path builder.
+- Phase 3 upload wiring is implemented in the repo.
+- The backend still uses the local provider by default.
+- Existing image accessors and API contracts were left unchanged.
+- Filament resources no longer hardcode upload directories for media-bearing fields.
+- Upload tracing is now available in the media service and providers, including the final object key for Filament banner and product uploads.
 
 Pending tasks:
 
-- Review and approve the migration strategy.
-- Decide whether Supabase will be the first provider or whether the abstraction should be built provider-agnostic from the start.
-- Implement the media service and update upload flows only after approval.
+- Run the new media and Filament helper tests in a PHP-enabled shell.
+- Confirm the upload helper behaves correctly in the real Laravel runtime.
+- Inspect the new logs if a Supabase upload appears to succeed without the object showing in the bucket UI.
+- Decide whether any additional document categories need to be added before Phase 4.
 
 Known blockers:
 
-- No implementation approval has been granted yet.
-- The current codebase does not have a dedicated media service abstraction.
-- Driver and review media may require a separate public/private policy before migration.
+- Full Laravel test execution is still pending in this shell because `php` is not available on PATH.
+- Phase 4 should not begin until Phase 3 runtime verification is complete.
 
 Important architectural decisions:
 
 - Keep Laravel as the owner of media logic.
+
+## 2026-06-15
+
+## Completed:
+
+- Added provider-level and service-level media upload logs for Filament traces.
+- Documented that Supabase "folders" are virtual object-key prefixes, not physical directories.
+- Added compatibility for `SUPABASE_BUCKET` as a fallback for `SUPABASE_PUBLIC_BUCKET` so the configured bucket name is respected during uploads.
+- Centralized banner retrieval through a banner-specific media service and observer so banner URLs and deletes use one provider-aware path.
+- Switched the banner admin table to render the provider-aware banner URL instead of the raw storage key.
+
+## Files modified:
+
+- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\MediaService.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\Providers\LocalProvider.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Media\Providers\SupabaseProvider.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Support\Filament\MediaUpload.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Services\Banners\BannerMediaService.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Observers\BannerObserver.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Http\Controllers\Api\V1\Site\SiteController.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Models\Banner.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Filament\Resources\Banners\Tables\BannersTable.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Providers\AppServiceProvider.php`
+- `C:\Users\ADMIN\Herd\laravel-project\tests\Unit\Services\Banners\BannerMediaServiceTest.php`
+- `C:\Users\ADMIN\Herd\laravel-project\docs\image-storage-supabase-migration.md`
+- `C:\Users\ADMIN\Herd\laravel-project\config\media.php`
+
+## Reason:
+
+- Make banner and product upload targets observable during live Filament uploads.
+- Clarify that `banners/...` and `products/...` are the object-key prefixes that appear in Supabase Storage.
+- Prevent uploads from silently falling back to the default Supabase bucket when the legacy env var name is used.
+- Keep banner retrieval and banner delete cleanup centralized so both the admin table and site API use the same banner-specific code path.
+
+## Verification:
+
+- Reviewed the current Phase 3 tracker sections.
+- Added trace logging without changing database schema, API contracts, or upload destinations.
+- Verified the banner retrieval path now flows through a single banner service for the API and admin table.
 - Keep frontend consumers URL-only.
 - Preserve existing API field names where possible to minimize breaking changes.
 - Treat storage provider choice as replaceable.
 
 Recommended next steps:
 
-1. Approve the target architecture and bucket policy.
-2. Implement the Laravel media abstraction.
-3. Update Filament upload forms and model accessors.
-4. Build a controlled migration command for existing assets.
-5. Remove frontend path reconstruction once the API contract is stable.
+1. Run the media and Filament helper tests in a PHP-enabled shell.
+2. Review the helper behavior for any remaining upload surfaces.
+3. Approve the Phase 4 media migration once runtime verification is green.

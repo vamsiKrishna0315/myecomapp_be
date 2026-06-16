@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Enums\MediaCategory;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -50,17 +52,18 @@ final class UsersForm
                     ->maxLength(255)
                     ->live(),
 
-                FileUpload::make('address_proof')
-                    ->label('Address Proof Document')
-                    ->disk('public')
-                    ->directory('users/address-proofs')
-                    ->acceptedFileTypes(['application/pdf', 'image/*'])
-                    ->maxSize(5120) // 5MB
-                    ->helperText('Upload PDF or image files (max 5MB)')
-                    ->required(function (callable $get) {
-                        return filled($get('address'));
-                    })
-                    ->requiredWith('address'),
+                MediaUpload::configure(
+                    FileUpload::make('address_proof')
+                        ->label('Address Proof Document')
+                        ->acceptedFileTypes(['application/pdf', 'image/*'])
+                        ->maxSize(5120) // 5MB
+                        ->helperText('Upload PDF or image files (max 5MB)')
+                        ->required(function (callable $get) {
+                            return filled($get('address'));
+                        })
+                        ->requiredWith('address'),
+                    MediaCategory::UserDocuments
+                ),
 
                 Select::make('user_role')
                     ->label('User Role')

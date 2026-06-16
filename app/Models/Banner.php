@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Banners\BannerMediaService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 final class Banner extends Model
 {
@@ -24,10 +24,6 @@ final class Banner extends Model
 
     public function getBannerPathUrlAttribute()
     {
-        if (! $this->banner_path) {
-            return null;
-        }
-
-        return Storage::disk('public')->url($this->banner_path);
+        return app(BannerMediaService::class)->bannerPathUrl($this->banner_path);
     }
 }

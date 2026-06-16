@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Drivers\Schemas;
 
+use App\Enums\MediaCategory;
 use App\Enums\VehicleType;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Components\Grid;
@@ -183,48 +185,52 @@ class DriverForm
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                FileUpload::make('profile_image')
-                                    ->image()
-                                    ->directory('drivers/profiles')
-                                    ->visibility('public')
-                                    ->label('Profile Photo')
-                                    ->helperText('Upload driver profile photo')
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                                    ->maxSize(2048)
-                                    ->columnSpan(1),
+                                MediaUpload::configure(
+                                    FileUpload::make('profile_image')
+                                        ->image()
+                                        ->label('Profile Photo')
+                                        ->helperText('Upload driver profile photo')
+                                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                        ->maxSize(2048)
+                                        ->columnSpan(1),
+                                    MediaCategory::Drivers
+                                ),
                                 
-                                FileUpload::make('driver_license_image')
-                                    ->image()
-                                    ->directory('drivers/licenses')
-                                    ->visibility('public')
-                                    ->label('Driving License')
-                                    ->helperText('Upload driving license document')
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                                    ->maxSize(5120)
-                                    ->columnSpan(1),
+                                MediaUpload::configure(
+                                    FileUpload::make('driver_license_image')
+                                        ->image()
+                                        ->label('Driving License')
+                                        ->helperText('Upload driving license document')
+                                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                                        ->maxSize(5120)
+                                        ->columnSpan(1),
+                                    MediaCategory::Licenses
+                                ),
                             ]),
 
                         Grid::make(2)
                             ->schema([
-                                FileUpload::make('vehicle_registration_image')
-                                    ->image()
-                                    ->directory('drivers/registrations')
-                                    ->visibility('public')
-                                    ->label('Vehicle Registration')
-                                    ->helperText('Upload vehicle registration certificate')
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                                    ->maxSize(5120)
-                                    ->columnSpan(1),
+                                MediaUpload::configure(
+                                    FileUpload::make('vehicle_registration_image')
+                                        ->image()
+                                        ->label('Vehicle Registration')
+                                        ->helperText('Upload vehicle registration certificate')
+                                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                                        ->maxSize(5120)
+                                        ->columnSpan(1),
+                                    MediaCategory::Registrations
+                                ),
                                 
-                                FileUpload::make('insurance_image')
-                                    ->image()
-                                    ->directory('drivers/insurance')
-                                    ->visibility('public')
-                                    ->label('Insurance Document')
-                                    ->helperText('Upload vehicle insurance certificate')
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-                                    ->maxSize(5120)
-                                    ->columnSpan(1),
+                                MediaUpload::configure(
+                                    FileUpload::make('insurance_image')
+                                        ->image()
+                                        ->label('Insurance Document')
+                                        ->helperText('Upload vehicle insurance certificate')
+                                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                                        ->maxSize(5120)
+                                        ->columnSpan(1),
+                                    MediaCategory::Insurance
+                                ),
                             ]),
                     ])
                     ->columnSpanFull()

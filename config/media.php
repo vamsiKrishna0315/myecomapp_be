@@ -37,7 +37,7 @@ return [
     'supabase' => [
         'url' => env('SUPABASE_URL', ''),
         'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY', ''),
-        'public_bucket' => env('SUPABASE_PUBLIC_BUCKET', 'yumeat-assets'),
+        'public_bucket' => env('SUPABASE_PUBLIC_BUCKET', env('SUPABASE_BUCKET', 'yumeat-assets')),
         'storage_path' => env('SUPABASE_STORAGE_PATH', 'storage/v1/object'),
     ],
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Banners\Schemas;
 
+use App\Enums\MediaCategory;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -18,16 +20,17 @@ final class BannerForm
                 TextInput::make('banner_name')
                     ->label('Banner Name')
                     ->required(),
-                FileUpload::make('banner_path')
-                    ->label('Banner')
-                    ->image()
-                    ->disk('public')
-                    ->directory('banners')
-                    ->imagePreviewHeight('100')
-                    ->panelAspectRatio('2:1')
-                    ->enableOpen()
-                    ->enableDownload()
-                    ->required(),
+                MediaUpload::configure(
+                    FileUpload::make('banner_path')
+                        ->label('Banner')
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->panelAspectRatio('2:1')
+                        ->enableOpen()
+                        ->enableDownload()
+                        ->required(),
+                    MediaCategory::Banners
+                ),
                 TextInput::make('redirect_link')
                     ->label('Redirect Link'),
                 Toggle::make('show_live')

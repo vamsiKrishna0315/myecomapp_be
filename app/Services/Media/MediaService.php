@@ -6,6 +6,7 @@ namespace App\Services\Media;
 
 use App\Enums\MediaCategory;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 
 final class MediaService
 {
@@ -21,17 +22,66 @@ final class MediaService
 
     public function upload(UploadedFile $file, MediaCategory $category, ?string $filename = null): string
     {
-        return $this->provider->upload($file, $this->pathPolicy->assertUploadCategory($category), $filename);
+        $category = $this->pathPolicy->assertUploadCategory($category);
+
+        Log::info('Media service upload requested', [
+            'provider' => $this->provider::class,
+            'category' => $category->value,
+            'filename' => $filename,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        $path = $this->provider->upload($file, $category, $filename);
+
+        Log::info('Media service upload completed', [
+            'provider' => $this->provider::class,
+            'category' => $category->value,
+            'path' => $path,
+        ]);
+
+        return $path;
     }
 
     public function delete(string $path): bool
     {
-        return $this->provider->delete($this->pathPolicy->normalizeObjectKey($path));
+        $normalizedPath = $this->pathPolicy->normalizeObjectKey($path);
+
+        Log::debug('Media service delete requested', [
+            'provider' => $this->provider::class,
+            'path' => $normalizedPath,
+        ]);
+
+        $deleted = $this->provider->delete($normalizedPath);
+
+        Log::debug('Media service delete completed', [
+            'provider' => $this->provider::class,
+            'path' => $normalizedPath,
+            'deleted' => $deleted,
+        ]);
+
+        return $deleted;
     }
 
     public function exists(string $path): bool
     {
-        return $this->provider->exists($this->pathPolicy->normalizeObjectKey($path));
+        $normalizedPath = $this->pathPolicy->normalizeObjectKey($path);
+
+        Log::debug('Media service existence check requested', [
+            'provider' => $this->provider::class,
+            'path' => $normalizedPath,
+        ]);
+
+        $exists = $this->provider->exists($normalizedPath);
+
+        Log::debug('Media service existence check completed', [
+            'provider' => $this->provider::class,
+            'path' => $normalizedPath,
+            'exists' => $exists,
+        ]);
+
+        return $exists;
     }
 
     /**

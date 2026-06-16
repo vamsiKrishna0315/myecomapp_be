@@ -9,6 +9,7 @@ use App\Services\Media\MediaProviderInterface;
 use App\Services\Media\MediaPathPolicy;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 final class SupabaseProvider implements MediaProviderInterface
@@ -32,6 +33,14 @@ final class SupabaseProvider implements MediaProviderInterface
             throw new RuntimeException('Unable to read uploaded file contents for Supabase upload.');
         }
 
+        Log::info('Supabase media upload started', [
+            'category' => $category->value,
+            'bucket' => $this->bucket(),
+            'object_key' => $path,
+            'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+            'size' => $file->getSize(),
+        ]);
+
         $response = Http::baseUrl($this->projectUrl())
             ->withToken($this->serviceRoleKey())
             ->withHeaders([
@@ -41,26 +50,55 @@ final class SupabaseProvider implements MediaProviderInterface
             ->post($this->storagePathFor($path));
 
         if (! $response->successful()) {
+            Log::warning('Supabase media upload failed', [
+                'category' => $category->value,
+                'bucket' => $this->bucket(),
+                'object_key' => $path,
+                'status' => $response->status(),
+                'response' => $response->body(),
+            ]);
+
             throw new RuntimeException('Supabase media upload failed: '.$response->body());
         }
+
+        Log::info('Supabase media upload finished', [
+            'category' => $category->value,
+            'bucket' => $this->bucket(),
+            'object_key' => $path,
+            'status' => $response->status(),
+        ]);
 
         return $path;
     }
 
     public function delete(string $path): bool
     {
+        $objectKey = $this->pathPolicy->normalizeObjectKey($path);
+
+        Log::debug('Supabase media delete requested', [
+            'bucket' => $this->bucket(),
+            'object_key' => $objectKey,
+        ]);
+
         $response = Http::baseUrl($this->projectUrl())
             ->withToken($this->serviceRoleKey())
-            ->delete($this->storagePathFor($this->pathPolicy->normalizeObjectKey($path)));
+            ->delete($this->storagePathFor($objectKey));
 
         return $response->successful() || $response->status() === 404;
     }
 
     public function exists(string $path): bool
     {
+        $objectKey = $this->pathPolicy->normalizeObjectKey($path);
+
+        Log::debug('Supabase media existence check requested', [
+            'bucket' => $this->bucket(),
+            'object_key' => $objectKey,
+        ]);
+
         $response = Http::baseUrl($this->projectUrl())
             ->withToken($this->serviceRoleKey())
-            ->head($this->storagePathFor($this->pathPolicy->normalizeObjectKey($path)));
+            ->head($this->storagePathFor($objectKey));
 
         return $response->successful();
     }

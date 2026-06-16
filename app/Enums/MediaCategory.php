@@ -13,6 +13,7 @@ enum MediaCategory: string
     case WhyUs = 'why-us';
     case Stores = 'stores';
     case CutTypes = 'cut-types';
+    case ProductCuts = 'product-cuts';
     case Seo = 'seo';
     case Reviews = 'reviews';
 
@@ -20,6 +21,7 @@ enum MediaCategory: string
     case Licenses = 'licenses';
     case Insurance = 'insurance';
     case Registrations = 'registrations';
+    case UserDocuments = 'user-documents';
 
     public function isPublic(): bool
     {
@@ -44,6 +46,7 @@ enum MediaCategory: string
             self::WhyUs,
             self::Stores,
             self::CutTypes,
+            self::ProductCuts,
             self::Seo,
             self::Reviews,
         ];
@@ -59,6 +62,7 @@ enum MediaCategory: string
             self::Licenses,
             self::Insurance,
             self::Registrations,
+            self::UserDocuments,
         ];
     }
 

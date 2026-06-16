@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\WhyUs\Schemas;
 
+use App\Enums\MediaCategory;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -31,13 +33,14 @@ final class WhyUsForm
                     ->minValue(1900)
                     ->maxValue(2100),
 
-                FileUpload::make('image')
-                    ->label('Image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('why-us')
-                    ->maxSize(2048) // 2MB
-                    ->helperText('Upload images (max 2MB)'),
+                MediaUpload::configure(
+                    FileUpload::make('image')
+                        ->label('Image')
+                        ->image()
+                        ->maxSize(2048) // 2MB
+                        ->helperText('Upload images (max 2MB)'),
+                    MediaCategory::WhyUs
+                ),
 
                 Toggle::make('show_live')
                     ->label('Show Live')

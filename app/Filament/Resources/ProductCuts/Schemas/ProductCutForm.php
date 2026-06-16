@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\ProductCuts\Schemas;
 
+use App\Enums\MediaCategory;
 use App\Enums\WeightUnit;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -82,10 +84,11 @@ final class ProductCutForm
                     ->required(),
                 TextInput::make('preparation_time')
                     ->numeric(),
-                FileUpload::make('image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('product-cuts'),
+                MediaUpload::configure(
+                    FileUpload::make('image')
+                        ->image(),
+                    MediaCategory::ProductCuts
+                ),
                 Textarea::make('description')
                     ->columnSpanFull(),
                 Toggle::make('popular')

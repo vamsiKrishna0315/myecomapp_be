@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Stores\Schemas;
 
+use App\Enums\MediaCategory;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -71,11 +73,12 @@ final class StoreForm
 
                 Section::make('Social & Favicon')
                     ->schema([
-                        FileUpload::make('favicon')
-                            ->image()
-                            ->disk('public')
-                            ->directory('stores/favicons')
-                            ->maxSize(1024),
+                        MediaUpload::configure(
+                            FileUpload::make('favicon')
+                                ->image()
+                                ->maxSize(1024),
+                            MediaCategory::Stores
+                        ),
                         TextInput::make('facebook')
                             ->url()
                             ->maxLength(255),
@@ -99,11 +102,12 @@ final class StoreForm
                     ->schema([
                         Section::make('Logo')
                             ->schema([
-                                FileUpload::make('logo')
-                                    ->image()
-                                    ->disk('public')
-                                    ->directory('stores/logos')
-                                    ->maxSize(2048),
+                                MediaUpload::configure(
+                                    FileUpload::make('logo')
+                                        ->image()
+                                        ->maxSize(2048),
+                                    MediaCategory::Stores
+                                ),
                             ])
                             ->columnSpan(1),
 

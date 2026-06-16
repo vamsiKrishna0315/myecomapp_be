@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\FlashBanners\Schemas;
 
+use App\Enums\MediaCategory;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -18,16 +20,17 @@ final class FlashBannerForm
                 TextInput::make('name')
                     ->label('Name')
                     ->required(),
-                FileUpload::make('image')
-                    ->label('Image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('flash-banners')
-                    ->imagePreviewHeight('100')
-                    ->panelAspectRatio('2:1')
-                    ->enableOpen()
-                    ->enableDownload()
-                    ->required(),
+                MediaUpload::configure(
+                    FileUpload::make('image')
+                        ->label('Image')
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->panelAspectRatio('2:1')
+                        ->enableOpen()
+                        ->enableDownload()
+                        ->required(),
+                    MediaCategory::FlashBanners
+                ),
                 TextInput::make('redirect_link')
                     ->label('Redirect Link'),
                 Toggle::make('is_live')

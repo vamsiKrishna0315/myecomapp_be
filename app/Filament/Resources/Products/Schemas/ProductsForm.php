@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Products\Schemas;
 
+use App\Enums\MediaCategory;
 use App\Support\ProductSlugSupport;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -131,18 +133,20 @@ final class ProductsForm
                         Section::make('Media')
                             ->columnSpan(1)
                             ->schema([
-                                FileUpload::make('primary_image')
-                                    ->image()
-                                    ->disk('public')
-                                    ->directory('products')
-                                    ->label('Primary Image'),
+                                MediaUpload::configure(
+                                    FileUpload::make('primary_image')
+                                        ->image()
+                                        ->label('Primary Image'),
+                                    MediaCategory::Products
+                                ),
 
-                                FileUpload::make('images')
-                                    ->multiple()
-                                    ->image()
-                                    ->disk('public')
-                                    ->directory('products')
-                                    ->label('Additional Images'),
+                                MediaUpload::configure(
+                                    FileUpload::make('images')
+                                        ->multiple()
+                                        ->image()
+                                        ->label('Additional Images'),
+                                    MediaCategory::Products
+                                ),
                             ]),
                     ])
                     ->columnSpanFull(),

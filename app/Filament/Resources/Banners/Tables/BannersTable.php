@@ -24,6 +24,7 @@ final class BannersTable
                     ->sortable(),
                 ImageColumn::make('banner_path')
                     ->label('Banner')
+                    ->getStateUsing(fn ($record) => $record->banner_path_url)
                     ->height(60)
                     ->width(100),
                 IconColumn::make('status')

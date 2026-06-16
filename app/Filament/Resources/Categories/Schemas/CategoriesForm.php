@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Categories\Schemas;
 
+use App\Enums\MediaCategory;
+use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -33,16 +35,17 @@ final class CategoriesForm
                             ->placeholder('Enter category type (e.g., Product, Service, Food, etc.)')
                             ->columnSpanFull(),
 
-                        FileUpload::make('category_image')
-                            ->label('Category Image')
-                            ->image()
-                            ->disk('public')
-                            ->directory('categories')
-                            ->imagePreviewHeight('100')
-                            ->panelAspectRatio('2:1')
-                            ->enableOpen()
-                            ->enableDownload()
-                            ->columnSpanFull(),
+                        MediaUpload::configure(
+                            FileUpload::make('category_image')
+                                ->label('Category Image')
+                                ->image()
+                                ->imagePreviewHeight('100')
+                                ->panelAspectRatio('2:1')
+                                ->enableOpen()
+                                ->enableDownload()
+                                ->columnSpanFull(),
+                            MediaCategory::Categories
+                        ),
 
                         Toggle::make('status')
                             ->label('Active Status')

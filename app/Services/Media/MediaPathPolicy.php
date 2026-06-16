@@ -6,7 +6,6 @@ namespace App\Services\Media;
 
 use App\Enums\MediaCategory;
 use InvalidArgumentException;
-use LogicException;
 
 final class MediaPathPolicy
 {
@@ -28,13 +27,6 @@ final class MediaPathPolicy
 
     public function assertUploadCategory(MediaCategory $category): MediaCategory
     {
-        if (! $category->isPublic()) {
-            throw new LogicException(sprintf(
-                'Media uploads are not enabled for "%s". Reserved private categories are documented but not writable in Phase 2.',
-                $category->value
-            ));
-        }
-
         return $category;
     }
 

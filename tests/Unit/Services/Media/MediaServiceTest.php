@@ -46,6 +46,7 @@ final class MediaServiceTest extends TestCase
                 'why-us',
                 'stores',
                 'cut-types',
+                'product-cuts',
                 'seo',
                 'reviews',
             ],
@@ -57,6 +58,7 @@ final class MediaServiceTest extends TestCase
                 'licenses',
                 'insurance',
                 'registrations',
+                'user-documents',
             ],
             $service->privateCategories()
         );
@@ -128,16 +130,17 @@ final class MediaServiceTest extends TestCase
         app(MediaService::class)->publicUrl('../secret.jpg');
     }
 
-    public function test_it_rejects_private_categories_for_uploads(): void
+    public function test_it_allows_private_categories_for_uploads_and_preserves_object_key_structure(): void
     {
         Config::set('media.default', 'local');
         Storage::fake('public');
 
-        $this->expectException(\LogicException::class);
-
-        app(MediaService::class)->upload(
-            UploadedFile::fake()->create('driver-license.jpg', 10),
+        $path = app(MediaService::class)->upload(
+            UploadedFile::fake()->createWithContent('driver-license.jpg', 'driver-file-content'),
             MediaCategory::Drivers
         );
+
+        $this->assertStringStartsWith('drivers/', $path);
+        Storage::disk('public')->assertExists($path);
     }
 }

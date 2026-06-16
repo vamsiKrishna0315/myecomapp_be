@@ -9,6 +9,8 @@ use App\Services\Media\MediaPathPolicy;
 use App\Services\Media\MediaService;
 use App\Services\Media\Providers\LocalProvider;
 use App\Services\Media\Providers\SupabaseProvider;
+use App\Models\Banner;
+use App\Observers\BannerObserver;
 use App\Contracts\WhatsApp\WhatsAppServiceInterface;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,7 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->bootModelsDefaults();
+        $this->bootObservers();
     }
 
     private function bootModelsDefaults(): void
@@ -51,5 +54,10 @@ final class AppServiceProvider extends ServiceProvider
                 $app->make(MediaPathPolicy::class)
             );
         });
+    }
+
+    private function bootObservers(): void
+    {
+        Banner::observe(BannerObserver::class);
     }
 }
