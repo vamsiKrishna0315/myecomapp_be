@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Media\MediaService;
 use Illuminate\Database\Eloquent\Model;
 
 final class Store extends Model
@@ -35,8 +36,31 @@ final class Store extends Model
         'status',
     ];
 
+    protected $appends = [
+        'logo_url',
+        'favicon_url',
+    ];
+
     public function contactInfo()
     {
         return $this->hasOne(StoreContactInfo::class);
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (! $this->logo) {
+            return null;
+        }
+
+        return app(MediaService::class)->publicUrl((string) $this->logo);
+    }
+
+    public function getFaviconUrlAttribute(): ?string
+    {
+        if (! $this->favicon) {
+            return null;
+        }
+
+        return app(MediaService::class)->publicUrl((string) $this->favicon);
     }
 }

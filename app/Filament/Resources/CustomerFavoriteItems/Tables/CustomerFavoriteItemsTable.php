@@ -37,7 +37,7 @@ final class CustomerFavoriteItemsTable
 
                 ImageColumn::make('product.primary_image')
                     ->label('Image')
-                    ->disk('public')
+                    ->getStateUsing(fn ($record): ?string => $record->product?->primary_image_url)
                     ->size(40)
                     ->toggleable(),
 

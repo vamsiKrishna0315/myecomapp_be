@@ -17,7 +17,8 @@ final class ProductsTable
     {
         return $table
             ->columns([
-                ImageColumn::make('primary_image')
+                ImageColumn::make('primary_image_url')
+                    ->getStateUsing(fn ($record): ?string => $record->primary_image_url)
                     ->circular()
                     ->label('Image'),
 

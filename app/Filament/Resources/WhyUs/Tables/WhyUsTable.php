@@ -20,6 +20,7 @@ final class WhyUsTable
         return $table
             ->columns([
                 ImageColumn::make('image')
+                    ->getStateUsing(fn ($record): ?string => $record->image_url)
                     ->label('Image')
                     ->circular(),
 

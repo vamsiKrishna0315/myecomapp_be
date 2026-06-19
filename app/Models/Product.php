@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Media\MediaService;
 use App\Support\ProductSlugSupport;
 use App\Traits\HasMetaTag;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 final class Product extends Model
 {
@@ -36,7 +36,6 @@ final class Product extends Model
         'track_inventory',
         'requires_advance_order',
         'preparation_time',
-        // 'brand_id',
         'tags',
         'primary_image',
         'images',
@@ -286,11 +285,6 @@ final class Product extends Model
         return '₹'.number_format($lowest, 2).' - ₹'.number_format($highest, 2);
     }
 
-    // public function brand()
-    // {
-    //     return $this->belongsTo(Brand::class);
-    // }
-
     /**
      * The cut types that belong to the product.
      */
@@ -301,24 +295,25 @@ final class Product extends Model
             ->withTimestamps();
     }
 
-    public function getPrimaryImageUrlAttribute()
+    public function getPrimaryImageUrlAttribute(): ?string
     {
         if (! $this->primary_image) {
             return null;
         }
 
-        return Storage::disk('public')->url($this->primary_image);
+        return app(MediaService::class)->publicUrl((string) $this->primary_image);
     }
 
-    public function getImagesUrlsAttribute()
+    /**
+     * @return array<int, string>
+     */
+    public function getImagesUrlsAttribute(): array
     {
         if (! $this->images || ! is_array($this->images)) {
             return [];
         }
 
-        return array_map(function ($path) {
-            return Storage::disk('public')->url($path);
-        }, $this->images);
+        return array_map(static fn ($path): string => app(MediaService::class)->publicUrl((string) $path), $this->images);
     }
 
     protected static function boot()

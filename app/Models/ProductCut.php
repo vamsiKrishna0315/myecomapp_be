@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Media\MediaService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 final class ProductCut extends Model
 {
@@ -160,19 +160,19 @@ final class ProductCut extends Model
     /**
      * Get formatted price per piece.
      */
-    public function getFormattedPricePerPieceAttribute(): string
+    public function getFormattedPricePerPieceAttribute(): ?string
     {
         return $this->price_per_piece
             ? '₹'.number_format($this->price_per_piece, 2).'/piece'
             : null;
     }
 
-    public function getImageUrlAttribute()
+    public function getImageUrlAttribute(): ?string
     {
         if (! $this->image) {
             return null;
         }
 
-        return Storage::disk('public')->url($this->image);
+        return app(MediaService::class)->publicUrl($this->image);
     }
 }

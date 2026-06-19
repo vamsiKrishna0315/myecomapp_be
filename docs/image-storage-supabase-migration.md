@@ -2,8 +2,8 @@
 
 ## Project Status
 
-Current Phase: Phase 3 - Filament Upload Migration
-Status: In progress; implementation complete, verification pending
+Current Phase: Phase 4 - Existing Image Migration
+Status: Phase 3 complete; Phase 4 planning in progress
 Last Updated: 2026-06-14
 
 ---
@@ -530,8 +530,8 @@ Tasks:
 - [x] Add or update tests for URL generation, upload, delete, exists, invalid paths, and provider switching.
 
 Phase 3 - Filament Upload Migration
-[ ] Completed
-[x] In progress
+[x] Completed
+[ ] In progress
 [ ] Not started
 
 Audit findings:
@@ -558,12 +558,12 @@ Phase 3 tasks:
 
 Phase 4 - Existing Image Migration
 [ ] Not started
-[ ] In progress
+[x] In progress
 [ ] Completed
 
 Tasks:
 
-- [ ] Build a migration command for current media records.
+- [x] Build a migration command for current media records.
 - [ ] Migrate product, category, banner, flash banner, why-us, cut type, store, driver, and review assets.
 - [ ] Verify all legacy paths resolve after migration.
 - [ ] Keep a rollback map for pre-migration paths.
@@ -603,6 +603,37 @@ Tasks:
 - Added a reusable Filament upload helper backed by `MediaService`.
 - Migrated product, category, banner, flash banner, why-us, product cut, store, driver, and user document upload forms to the shared helper.
 - Added unit coverage for the Filament helper, common public categories, and expanded media service coverage for private-category uploads.
+
+2026-06-18
+
+## Completed:
+
+- Finished the remaining backend media URL migration for category, product cut, and cut type accessors.
+- Added regression coverage for the migrated image URL accessors.
+- Verified the focused product media tests pass in the Laravel runtime.
+- Advanced the migration tracker from Phase 3 to Phase 4 planning.
+- Expanded `media:migrate-to-public` to include flash banners, why-us, stores, drivers, meta tags, and order review image arrays.
+- Added feature coverage for migration behavior and dry-run safety.
+
+## Files modified:
+
+- `C:\Users\ADMIN\Herd\laravel-project\app\Models\Category.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Models\ProductCut.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Models\CutType.php`
+- `C:\Users\ADMIN\Herd\laravel-project\tests\Unit\Models\ProductTest.php`
+- `C:\Users\ADMIN\Herd\laravel-project\app\Console\Commands\MigrateMediaToPublic.php`
+- `C:\Users\ADMIN\Herd\laravel-project\tests\Feature\MigrateMediaToPublicCommandTest.php`
+- `C:\Users\ADMIN\Herd\laravel-project\docs\image-storage-supabase-migration.md`
+
+## Reason:
+
+- Close the remaining backend retrieval gap before moving to existing-record migration and frontend simplification.
+
+## Verification:
+
+- Ran `php artisan test tests/Unit/Models/ProductTest.php` and confirmed the media accessor tests pass.
+- Ran `php artisan test tests/Feature/MigrateMediaToPublicCommandTest.php tests/Unit/Models/ProductTest.php` and confirmed both suites pass.
+- Ran `vendor/bin/pint --dirty` and confirmed formatting is clean.
 
 ## Files modified:
 

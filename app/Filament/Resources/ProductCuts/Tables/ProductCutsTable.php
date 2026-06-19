@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\ProductCuts\Tables;
 
 use Filament\Actions\BulkActionGroup;
@@ -10,7 +12,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class ProductCutsTable
+final class ProductCutsTable
 {
     public static function configure(Table $table): Table
     {
@@ -62,7 +64,8 @@ class ProductCutsTable
                 TextColumn::make('preparation_time')
                     ->numeric()
                     ->sortable(),
-                ImageColumn::make('image'),
+                ImageColumn::make('image')
+                    ->getStateUsing(fn ($record): ?string => $record->image_url),
                 IconColumn::make('popular')
                     ->boolean(),
                 TextColumn::make('display_order')

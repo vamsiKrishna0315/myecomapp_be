@@ -47,6 +47,7 @@ final class TopSellingProductsWidget extends BaseWidget
             )
             ->columns([
                 Tables\Columns\ImageColumn::make('primary_image')
+                    ->getStateUsing(fn ($record): ?string => $record->primary_image_url)
                     ->label('Image')
                     ->circular()
                     ->size(50)

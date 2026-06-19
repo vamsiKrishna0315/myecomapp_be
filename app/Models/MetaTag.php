@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Media\MediaService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
@@ -11,7 +12,9 @@ final class MetaTag extends Model
 {
     protected $appends = [
         'show_live',
+        'og_image_url',
         'seo',
+        'twitter_image_url',
     ];
 
     protected $fillable = [
@@ -171,6 +174,16 @@ final class MetaTag extends Model
         return $this->twitter_description ?? $this->getDescription();
     }
 
+    public function getOgImageUrlAttribute(): ?string
+    {
+        return $this->resolveMediaUrl($this->og_image);
+    }
+
+    public function getTwitterImageUrlAttribute(): ?string
+    {
+        return $this->resolveMediaUrl($this->twitter_image ?: $this->og_image);
+    }
+
     /**
      * Convert full SEO into array (useful for API)
      */
@@ -187,7 +200,7 @@ final class MetaTag extends Model
             'openGraph' => [
                 'title' => $this->getOgTitle(),
                 'description' => $this->getOgDescription(),
-                'image' => $this->og_image,
+                'image' => $this->og_image_url,
                 'type' => $this->og_type ?? 'website',
             ],
 
@@ -195,7 +208,7 @@ final class MetaTag extends Model
                 'card' => $this->twitter_card ?? 'summary_large_image',
                 'title' => $this->getTwitterTitle(),
                 'description' => $this->getTwitterDescription(),
-                'image' => $this->twitter_image ?? $this->og_image,
+                'image' => $this->twitter_image_url,
             ],
 
             'json_ld' => $this->json_ld,
@@ -208,5 +221,18 @@ final class MetaTag extends Model
     public function getSeoAttribute(): array
     {
         return $this->toSeoArray();
+    }
+
+    private function resolveMediaUrl(?string $path): ?string
+    {
+        if (! filled($path)) {
+            return null;
+        }
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        return app(MediaService::class)->publicUrl($path);
     }
 }

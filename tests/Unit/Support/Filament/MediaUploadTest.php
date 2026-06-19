@@ -6,6 +6,7 @@ namespace Tests\Unit\Support\Filament;
 
 use App\Enums\MediaCategory;
 use App\Support\Filament\MediaUpload;
+use Closure;
 use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Support\Facades\Config;
@@ -35,9 +36,10 @@ final class MediaUploadTest extends TestCase
 
         $this->assertSame('public', $component->getDiskName());
         $this->assertNull($component->getDirectory());
+        $this->assertFalse($component->shouldFetchFileInformation());
 
-        $save = $this->callback($component, 'saveUploadedFileUsing');
-        $delete = $this->callback($component, 'deleteUploadedFileUsing');
+        $save = $this->componentCallback($component, 'saveUploadedFileUsing');
+        $delete = $this->componentCallback($component, 'deleteUploadedFileUsing');
         $file = $this->temporaryFile('primary-image-hash=primary-image-mimeType=image_jpeg.jpg');
 
         $path = $save($component, $file);
@@ -45,9 +47,27 @@ final class MediaUploadTest extends TestCase
         $this->assertStringStartsWith('products/', $path);
         Storage::disk('public')->assertExists($path);
 
-        $delete($component, $path);
+        $delete($path);
 
         $this->assertFalse(Storage::disk('public')->exists($path));
+    }
+
+    public function test_it_returns_preview_metadata_from_media_service_url(): void
+    {
+        $component = MediaUpload::configure(
+            FileUpload::make('primary_image')->image(),
+            MediaCategory::Products
+        );
+
+        $getUploadedFile = $this->componentCallback($component, 'getUploadedFileUsing');
+        $path = 'products/demo-image.jpg';
+
+        $metadata = $getUploadedFile($component, $path, null);
+
+        $this->assertSame('demo-image.jpg', $metadata['name']);
+        $this->assertSame(0, $metadata['size']);
+        $this->assertNull($metadata['type']);
+        $this->assertSame(app(\App\Services\Media\MediaService::class)->publicUrl($path), $metadata['url']);
     }
 
     public function test_it_supports_multiple_files_with_the_same_category_prefix(): void
@@ -59,7 +79,7 @@ final class MediaUploadTest extends TestCase
 
         $this->assertTrue($component->isMultiple());
 
-        $save = $this->callback($component, 'saveUploadedFileUsing');
+        $save = $this->componentCallback($component, 'saveUploadedFileUsing');
         $firstPath = $save($component, $this->temporaryFile('gallery-one-hash=gallery-one-mimeType=image_jpeg.jpg'));
         $secondPath = $save($component, $this->temporaryFile('gallery-two-hash=gallery-two-mimeType=image_jpeg.jpg'));
 
@@ -88,7 +108,7 @@ final class MediaUploadTest extends TestCase
                 $category
             );
 
-            $save = $this->callback($component, 'saveUploadedFileUsing');
+            $save = $this->componentCallback($component, 'saveUploadedFileUsing');
             $path = $save($component, $this->temporaryFile("{$field}-hash={$field}-mimeType=image_jpeg.jpg"));
 
             $this->assertStringStartsWith($prefix.'/', $path);
@@ -103,7 +123,7 @@ final class MediaUploadTest extends TestCase
             MediaCategory::Licenses
         );
 
-        $save = $this->callback($component, 'saveUploadedFileUsing');
+        $save = $this->componentCallback($component, 'saveUploadedFileUsing');
         $path = $save($component, $this->temporaryFile('license-hash=license-mimeType=application_pdf.pdf'));
 
         $this->assertStringStartsWith('licenses/', $path);
@@ -117,17 +137,16 @@ final class MediaUploadTest extends TestCase
             MediaCategory::UserDocuments
         );
 
-        $save = $this->callback($component, 'saveUploadedFileUsing');
+        $save = $this->componentCallback($component, 'saveUploadedFileUsing');
         $path = $save($component, $this->temporaryFile('proof-hash=proof-mimeType=application_pdf.pdf'));
 
         $this->assertStringStartsWith('user-documents/', $path);
         Storage::disk('public')->assertExists($path);
     }
 
-    private function callback(BaseFileUpload $component, string $property): \Closure
+    private function componentCallback(BaseFileUpload $component, string $property): Closure
     {
         $reflection = new ReflectionProperty($component, $property);
-        $reflection->setAccessible(true);
 
         return $reflection->getValue($component);
     }

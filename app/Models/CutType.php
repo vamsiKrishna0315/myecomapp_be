@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Media\MediaService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 final class CutType extends Model
 {
@@ -49,7 +49,7 @@ final class CutType extends Model
         return $query->where('show_live', 1);
     }
 
-    public function getIconUrlAttribute()
+    public function getIconUrlAttribute(): ?string
     {
         $icon = $this->icon;
         if (! $icon) {
@@ -59,6 +59,6 @@ final class CutType extends Model
             return $icon;
         }
 
-        return Storage::disk('public')->url($icon);
+        return app(MediaService::class)->publicUrl($icon);
     }
 }

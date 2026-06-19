@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Media\MediaService;
 use App\Traits\HasMetaTag;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 final class Category extends Model
@@ -58,12 +58,12 @@ final class Category extends Model
         return url('/category/'.$this->slug);
     }
 
-    public function getCategoryImageUrlAttribute()
+    public function getCategoryImageUrlAttribute(): ?string
     {
         if (! $this->category_image) {
             return null;
         }
 
-        return Storage::disk('public')->url($this->category_image);
+        return app(MediaService::class)->publicUrl($this->category_image);
     }
 }

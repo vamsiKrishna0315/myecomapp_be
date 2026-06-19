@@ -26,8 +26,6 @@ final class FlashBannerForm
                         ->image()
                         ->imagePreviewHeight('100')
                         ->panelAspectRatio('2:1')
-                        ->enableOpen()
-                        ->enableDownload()
                         ->required(),
                     MediaCategory::FlashBanners
                 ),
