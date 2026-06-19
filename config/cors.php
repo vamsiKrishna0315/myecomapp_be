@@ -21,9 +21,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    'allowed_origins' => [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://myecomapp-fe.vercel.app',
+    ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https://myecomapp-fe-[a-z0-9-]+\.vercel\.app$#',
+    ],
 
     'allowed_headers' => ['*'],
 
