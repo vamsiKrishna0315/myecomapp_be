@@ -6,12 +6,14 @@ namespace App\Models;
 
 use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use QCod\Gamify\Gamify;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -25,7 +27,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read CarbonInterface $created_at
  * @property-read CarbonInterface $updated_at
  */
-final class User extends Authenticatable implements MustVerifyEmail, FilamentUser
+final class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     use Gamify, HasRoles;
 
@@ -88,7 +90,7 @@ final class User extends Authenticatable implements MustVerifyEmail, FilamentUse
     /**
      * Get the store that the user belongs to.
      */
-    public function store()
+    public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
     }
@@ -96,25 +98,9 @@ final class User extends Authenticatable implements MustVerifyEmail, FilamentUse
     /**
      * Get all store vendor orders created by this vendor.
      */
-    public function storeVendorOrders()
+    public function storeVendorOrders(): HasMany
     {
         return $this->hasMany(StoreVendorOrders::class, 'store_vendor_id');
-    }
-
-    /**
-     * Boot method to automatically assign roles when user_role is set
-     */
-    protected static function booted()
-    {
-        self::saving(function ($user) {
-            // If user_role is being changed, sync with Spatie roles
-            if ($user->isDirty('user_role') && $user->user_role) {
-                // This will be handled after save to ensure the user exists
-                $user->afterCommit(function () use ($user) {
-                    $user->syncRoles([$user->user_role]);
-                });
-            }
-        });
     }
 
     public function canAccessPanel(Panel $panel): bool
@@ -126,5 +112,21 @@ final class User extends Authenticatable implements MustVerifyEmail, FilamentUse
             'panel_user',
             $panelId,
         ]) || $this->user_role === $panelId;
+    }
+
+    /**
+     * Boot method to automatically assign roles when user_role is set
+     */
+    protected static function booted(): void
+    {
+        self::saved(function (self $user): void {
+            if (! filled($user->user_role)) {
+                return;
+            }
+
+            if ($user->wasRecentlyCreated || $user->wasChanged('user_role')) {
+                $user->syncRoles([$user->user_role]);
+            }
+        });
     }
 }

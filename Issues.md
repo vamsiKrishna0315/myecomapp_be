@@ -2,7 +2,8 @@
 2. USer Creation Address needs to be from Google dynamic and saving have error
    Call to undefined method App\Models\User::afterCommit()
 3. Customer creation DOB is not good
-4. WHy there is YEar in WHy US and it is madiatory ? Description is maniatory but no validate error
+4. WHy there is YEar in WHy US and it is madiatory ? 
+5. Description is maniatory but no validate error
 
 
 Image uploads needs to be verified

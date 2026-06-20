@@ -1,19 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Customers\Schemas;
 
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Schema;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 
-class CustomersForm
+final class CustomersForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -27,19 +27,19 @@ class CustomersForm
                                     ->required()
                                     ->maxLength(255)
                                     ->label('First Name'),
-                                
+
                                 TextInput::make('last_name')
                                     ->required()
                                     ->maxLength(255)
                                     ->label('Last Name'),
-                                
+
                                 DatePicker::make('dob')
                                     ->label('Date of Birth')
-                                    ->maxDate(now()->subYears(18))
+                                    ->maxDate(now())
                                     ->displayFormat('d/m/Y')
                                     ->native(false),
                             ]),
-                        
+
                         Grid::make(3)
                             ->schema([
                                 TextInput::make('email')
@@ -48,7 +48,7 @@ class CustomersForm
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255)
                                     ->label('Email'),
-                                
+
                                 TextInput::make('mobile')
                                     ->tel()
                                     ->required()
@@ -56,7 +56,7 @@ class CustomersForm
                                     ->maxLength(15)
                                     ->label('Mobile Number')
                                     ->placeholder('+91 1234567890'),
-                                
+
                                 TextInput::make('password')
                                     ->password()
                                     ->required(fn (string $context): bool => $context === 'create')
@@ -66,7 +66,7 @@ class CustomersForm
                                     ->label('Password')
                                     ->helperText('Leave blank to keep current password'),
                             ]),
-                        
+
                         Grid::make(3)
                             ->schema([
                                 Select::make('status')
@@ -93,7 +93,7 @@ class CustomersForm
                                             ->maxLength(255)
                                             ->label('Address Line 1')
                                             ->columnSpan(2),
-                                        
+
                                         Select::make('address_type')
                                             ->options([
                                                 1 => 'Home',
@@ -104,43 +104,43 @@ class CustomersForm
                                             ->required()
                                             ->label('Address Type'),
                                     ]),
-                                
+
                                 Grid::make(3)
                                     ->schema([
                                         TextInput::make('address_line2')
                                             ->maxLength(255)
                                             ->label('Address Line 2')
                                             ->placeholder('Apartment, suite, etc. (optional)'),
-                                        
+
                                         TextInput::make('city')
                                             ->required()
                                             ->maxLength(255)
                                             ->label('City'),
-                                        
+
                                         TextInput::make('state')
                                             ->required()
                                             ->maxLength(255)
                                             ->label('State'),
                                     ]),
-                                
+
                                 Grid::make(3)
                                     ->schema([
                                         TextInput::make('zip_code')
                                             ->required()
                                             ->maxLength(10)
                                             ->label('ZIP / Postal Code'),
-                                        
+
                                         TextInput::make('country')
                                             ->required()
                                             ->default('India')
                                             ->maxLength(255)
                                             ->label('Country'),
-                                        
+
                                         Toggle::make('is_default')
                                             ->label('Default Address')
                                             ->default(false),
                                     ]),
-                                
+
                                 Grid::make(3)
                                     ->schema([
                                         Select::make('status')
@@ -157,9 +157,8 @@ class CustomersForm
                             ->addActionLabel('Add Address')
                             ->collapsible()
                             ->cloneable()
-                            ->itemLabel(fn (array $state): ?string => 
-                                $state['address_line1'] 
-                                    ? "{$state['address_line1']}, {$state['city']}" 
+                            ->itemLabel(fn (array $state): ?string => $state['address_line1']
+                                    ? "{$state['address_line1']}, {$state['city']}"
                                     : 'New Address'
                             )
                             ->columns(1)
