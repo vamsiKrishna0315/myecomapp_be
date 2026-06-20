@@ -7,6 +7,7 @@ namespace App\Filament\Resources\WhyUs\Schemas;
 use App\Enums\MediaCategory;
 use App\Support\Filament\MediaUpload;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -22,14 +23,15 @@ final class WhyUsForm
                     ->required()
                     ->maxLength(255),
 
-                TextInput::make('description')
+                Textarea::make('description')
                     ->label('Description')
+                    ->required()
                     ->maxLength(255),
 
                 TextInput::make('year')
                     ->label('Year')
                     ->numeric()
-                    ->required()
+                    ->helperText('Optional')
                     ->minValue(1900)
                     ->maxValue(2100),
 
