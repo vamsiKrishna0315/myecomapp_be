@@ -41,7 +41,7 @@ final class OrderItemRequest extends FormRequest
             'weight' => 'nullable|numeric|min:0',
             'actual_weight' => 'nullable|numeric|min:0',
             'ordered_weight' => 'nullable|numeric|min:0',
-            'weight_unit' => 'nullable|string|in:kg,g,lb,piece',
+            'weight_unit' => 'nullable|string|in:kg,gram,piece',
 
             // Totals
             'total_price' => 'required|numeric|min:0',
@@ -94,7 +94,7 @@ final class OrderItemRequest extends FormRequest
             'unit_price.min' => 'Unit price cannot be negative.',
             'total_price.required' => 'Total price is required for each item.',
             'total_price.min' => 'Total price cannot be negative.',
-            'weight_unit.in' => 'Weight unit must be one of: kg, g, lb, or piece.',
+            'weight_unit.in' => 'Weight unit must be one of: kg, gram, or piece.',
             'special_instructions.max' => 'Special instructions cannot exceed 500 characters.',
         ];
     }

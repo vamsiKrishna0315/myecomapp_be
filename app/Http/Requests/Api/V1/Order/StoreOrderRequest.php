@@ -50,7 +50,7 @@ final class StoreOrderRequest extends FormRequest
             'items.*.weight' => 'nullable|numeric|min:0',
             'items.*.actual_weight' => 'nullable|numeric|min:0',
             'items.*.ordered_weight' => 'nullable|numeric|min:0',
-            'items.*.weight_unit' => 'nullable|string|in:kg,g,lb,piece',
+            'items.*.weight_unit' => 'nullable|string|in:kg,gram,piece',
 
             // Item Totals
             'items.*.total_price' => 'required|numeric|min:0',
@@ -160,7 +160,7 @@ final class StoreOrderRequest extends FormRequest
             'items.*.total_price.required' => 'Total price is required for each item.',
             'items.*.total_price.min' => 'Total price cannot be negative.',
 
-            'items.*.weight_unit.in' => 'Weight unit must be one of: kg, g, lb, or piece.',
+            'items.*.weight_unit.in' => 'Weight unit must be one of: kg, gram, or piece.',
             'items.*.special_instructions.max' => 'Item special instructions cannot exceed 500 characters.',
 
             'special_instructions.max' => 'Special instructions cannot exceed 1000 characters.',

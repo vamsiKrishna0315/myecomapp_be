@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Products\Schemas;
 
 use App\Enums\MediaCategory;
-use App\Support\ProductSlugSupport;
 use App\Support\Filament\MediaUpload;
+use App\Support\ProductSlugSupport;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -127,6 +127,71 @@ final class ProductsForm
                                         Toggle::make('track_inventory')
                                             ->label('Track Inventory')
                                             ->default(true),
+                                    ]),
+
+                                Section::make('Units')
+                                    ->schema([
+                                        Select::make('allowed_units')
+                                            ->label('Allowed Units')
+                                            ->multiple()
+                                            ->options([
+                                                'gram' => 'Gram (g)',
+                                                'kg' => 'Kilogram (kg)',
+                                                'piece' => 'Piece',
+                                            ])
+                                            ->default(['kg'])
+                                            ->required()
+                                            ->live()
+                                            ->helperText('Select which units customers can order in. Your price will be converted automatically.'),
+
+                                        Select::make('base_price_unit')
+                                            ->label('Base Price Unit')
+                                            ->options([
+                                                'gram' => 'Gram (g)',
+                                                'kg' => 'Kilogram (kg)',
+                                                'piece' => 'Piece',
+                                            ])
+                                            ->default('kg')
+                                            ->required()
+                                            ->live()
+                                            ->helperText('Select which unit the price field represents. Prices for other allowed units will auto-calculate.')
+                                            ->rule(function ($get) {
+                                                return function ($attribute, $value, $fail) use ($get) {
+                                                    $allowedUnits = (array) $get('allowed_units');
+                                                    if (! in_array($value, $allowedUnits, true)) {
+                                                        $fail('Base Price Unit must be one of the Allowed Units. Please select an allowed unit.');
+                                                    }
+                                                };
+                                            }),
+
+                                        // Weight Per Piece Type (Standard or Custom)
+                                        Select::make('grams_per_piece_type')
+                                            ->label('Weight Per Piece')
+                                            ->options([
+                                                'standard' => 'Standard (100g)',
+                                                'custom' => 'Custom Weight',
+                                            ])
+                                            ->default('standard')
+                                            ->required(fn ($get) => in_array('piece', (array) $get('allowed_units'), true))
+                                            ->visible(fn ($get) => in_array('piece', (array) $get('allowed_units'), true))
+                                            ->live()
+                                            ->helperText('Choose standard 100g per piece or enter a custom weight.')
+                                            ->afterStateUpdated(function ($state, $set) {
+                                                if ($state === 'standard') {
+                                                    $set('grams_per_piece', 100);
+                                                }
+                                            }),
+
+                                        TextInput::make('grams_per_piece')
+                                            ->label('Custom Weight Per Piece (grams)')
+                                            ->numeric()
+                                            ->minValue(0.001)
+                                            ->step(0.001)
+                                            ->nullable()
+                                            ->required(fn ($get) => in_array('piece', (array) $get('allowed_units'), true) && $get('grams_per_piece_type') === 'custom')
+                                            ->visible(fn ($get) => in_array('piece', (array) $get('allowed_units'), true) && $get('grams_per_piece_type') === 'custom')
+                                            ->placeholder('e.g., 250 for 250g per piece')
+                                            ->helperText('Enter the exact weight in grams for each piece.'),
                                     ]),
                             ]),
 

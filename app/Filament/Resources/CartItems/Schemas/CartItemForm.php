@@ -84,7 +84,6 @@ final class CartItemForm
                                         'kg' => 'Kilogram (kg)',
                                         'piece' => 'Piece',
                                         'gram' => 'Gram (g)',
-                                        'pound' => 'Pound (lb)',
                                     ])
                                     ->required()
                                     ->default('kg'),

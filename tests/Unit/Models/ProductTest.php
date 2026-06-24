@@ -206,3 +206,16 @@ it('serializes meta tag seo images with provider-aware urls', function (): void 
         ->and($metaTag->seo['twitter']['image'])
         ->toBe('https://cdn.example.com/twitter-home.jpg');
 });
+
+it('stores allowed units and grams per piece for products', function (): void {
+    $product = new Product;
+    $product->forceFill([
+        'allowed_units' => ['gram', 'kg', 'piece'],
+        'grams_per_piece' => 85.500,
+    ]);
+
+    expect($product->allowed_units)
+        ->toBe(['gram', 'kg', 'piece'])
+        ->and((string) $product->grams_per_piece)
+        ->toBe('85.500');
+});

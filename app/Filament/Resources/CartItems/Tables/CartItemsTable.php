@@ -106,7 +106,6 @@ final class CartItemsTable
                         'kg' => 'Kilogram',
                         'piece' => 'Piece',
                         'gram' => 'Gram',
-                        'pound' => 'Pound',
                     ]),
             ])
             ->recordActions([

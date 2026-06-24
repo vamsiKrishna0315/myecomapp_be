@@ -169,10 +169,30 @@ final class CartItem extends Model
      */
     public function getEffectivePriceAttribute(): float
     {
+        $quantityUnit = $this->quantity_unit;
+
         if ($this->productCut) {
-            return $this->quantity_unit === 'kg'
-                ? $this->productCut->price_per_kg
-                : $this->productCut->price_per_piece;
+            if ($quantityUnit === 'gram') {
+                return (float) $this->productCut->price_per_kg / 1000;
+            }
+
+            if ($quantityUnit === 'piece') {
+                return (float) ($this->productCut->price_per_piece ?? $this->productCut->price_per_kg);
+            }
+
+            return (float) $this->productCut->price_per_kg;
+        }
+
+        if ($quantityUnit === 'gram' && $this->product->price_per_kg !== null) {
+            return (float) $this->product->price_per_kg / 1000;
+        }
+
+        if ($quantityUnit === 'piece' && $this->product->price_per_piece !== null) {
+            return (float) $this->product->price_per_piece;
+        }
+
+        if ($quantityUnit === 'kg' && $this->product->price_per_kg !== null) {
+            return (float) $this->product->price_per_kg;
         }
 
         return $this->product->price;
