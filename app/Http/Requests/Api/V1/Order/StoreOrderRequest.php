@@ -81,6 +81,8 @@ final class StoreOrderRequest extends FormRequest
             'billing_type_id' => 'required|integer|exists:billing_types,id',
             'payment_method' => 'nullable|string|max:50',
             'provider' => 'nullable|string|in:razorpay,phonepe,paytm,cod',
+            'razorpay_order_id' => 'nullable|string',
+            'payment_status' => 'nullable|string',
 
             // Order Totals - Optional (will be calculated)
             'subtotal' => 'nullable|numeric|min:0',

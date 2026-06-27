@@ -93,20 +93,29 @@ final class OrderController extends ResponseController
             $gateway = PaymentManager::gateway((string) $provider);
 
             // Create payment order first to ensure payment is possible
-            $payment = $gateway->createOrderFromData($orderData);
+            //$payment = $gateway->createOrderFromData($orderData);
 
+            Log::info('Payment order creation initiated', [
+                'provider' => $provider,
+                'order_data' => $orderData,
+            ]);
             // Only create database order if payment creation succeeds
             $order = app(CreateOrder::class)->executeInTransaction($orderData);
 
             // Update payment order with actual order ID for Razorpay
-            if ($provider === 'razorpay' && isset($payment['id'])) {
-                $order->update(['razorpay_order_id' => $payment['id']]);
+            if ($provider === 'razorpay' && !empty($orderData['razorpay_order_id'])) {
+                Log::info('Frontend Razorpay Order ID', [
+                    'razorpay_order_id' => $orderData['razorpay_order_id'] ?? null,
+                ]);
+
+                $order->update([
+                    'razorpay_order_id' => $orderData['razorpay_order_id'],
+                ]);
             }
 
             return $this->returnResponse([
                 'order' => $order->fresh(),
                 'payment_provider' => $provider,
-                'payment' => $payment,
             ], 'Order created successfully.', 201);
 
         } catch (InvalidArgumentException $e) {
