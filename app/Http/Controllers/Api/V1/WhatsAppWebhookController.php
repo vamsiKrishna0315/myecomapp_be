@@ -12,7 +12,7 @@ final class WhatsAppWebhookController extends ResponseController
     public function verify(Request $request): Response
     {
         $verifyToken = config('whatsapp.webhook_verify_token');
-        dd(config('whatsapp.webhook_verify_token'));
+        dd($request->query());
 
         if (
             $request->query('hub.mode') !== 'subscribe' ||
