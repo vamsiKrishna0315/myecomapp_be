@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\NearbyVendorController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\VendorGamificationController;
 use App\Http\Controllers\Api\V1\WhatsAppController;
+use App\Http\Controllers\Api\V1\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 
 include __DIR__.'/driver-api-sample.php';
@@ -97,6 +98,10 @@ Route::prefix('v1/customer')->group(function () {
 Route::prefix('v1/whatsapp')->group(function () {
     Route::post('/hello-world', [WhatsAppController::class, 'sendHelloWorld']);
     Route::post('/otp/send', [WhatsAppController::class, 'queueOtp']);
+
+    // New routes
+    Route::get('/webhook', [WhatsAppWebhookController::class, 'verify']);
+    Route::post('/webhook', [WhatsAppWebhookController::class, 'receive']);
 });
 
 // V1 API Routes for Store Vendors - Gamification

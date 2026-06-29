@@ -8,6 +8,7 @@ return [
     'token' => env('WHATSAPP_TOKEN'),
     'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
     'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+    'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN'),
     'default_language' => env('WHATSAPP_DEFAULT_LANGUAGE', 'en_US'),
     'queue' => env('WHATSAPP_QUEUE', 'whatsapp'),
     'timeout' => (int) env('WHATSAPP_TIMEOUT', 15),
