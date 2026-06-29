@@ -6,6 +6,7 @@ use App\Http\Controllers\DriverController;
 use App\Http\Controllers\GooglePlacesController;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
 
 // Redirect to Filament admin login
 Route::get('/login', fn () => redirect('/admin/login'))->name('login');
@@ -32,4 +33,26 @@ Route::prefix('driver')->name('driver.')->group(function () {
     Route::get('/orders/{orderId}', [DriverController::class, 'orderDetail'])->name('order-detail');
     Route::get('/orders/{orderId}/map', [DriverController::class, 'orderMap'])->name('order-map');
     Route::get('/profile', [DriverController::class, 'profile'])->name('profile');
+});
+
+
+
+
+Route::get('/logs', function () {
+    $logFile = storage_path('logs/laravel.log');
+
+    if (! File::exists($logFile)) {
+        return response('Log file not found.');
+    }
+
+    return response(File::get($logFile))
+        ->header('Content-Type', 'text/plain');
+});
+
+Route::get('/logs/clear', function () {
+    $logFile = storage_path('logs/laravel.log');
+
+    File::put($logFile, '');
+
+    return 'Logs cleared successfully.';
 });

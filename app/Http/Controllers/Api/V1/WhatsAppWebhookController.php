@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
 
 final class WhatsAppWebhookController extends ResponseController
 {
@@ -22,5 +23,14 @@ final class WhatsAppWebhookController extends ResponseController
         }
 
         return response($request->query('hub_challenge'), 200);
+    }
+
+    public function receive(Request $request): Response
+    {
+        Log::info('WhatsApp Webhook', [
+            'payload' => $request->all(),
+        ]);
+
+        return response('EVENT_RECEIVED', 200);
     }
 }
