@@ -56,3 +56,11 @@ Route::get('/logs/clear', function () {
 
     return 'Logs cleared successfully.';
 });
+
+Route::get('/webhook-test-log', function () {
+    return response(
+        file_exists(storage_path('logs/webhook-test.log'))
+            ? file_get_contents(storage_path('logs/webhook-test.log'))
+            : 'No webhook log found.'
+    )->header('Content-Type', 'text/plain');
+});
