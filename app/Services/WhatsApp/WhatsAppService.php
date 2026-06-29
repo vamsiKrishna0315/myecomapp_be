@@ -10,9 +10,15 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\Notification\NotificationTemplateResolver;
+use App\Enums\NotificationEventType;
 
 final class WhatsAppService implements WhatsAppServiceInterface
 {
+
+    public function __construct(
+        private readonly NotificationTemplateResolver $resolver,
+    ) {}
     /**
      * @return array<string, mixed>
      */
@@ -33,31 +39,55 @@ final class WhatsAppService implements WhatsAppServiceInterface
         return $this->sendTemplateMessage($recipientPhone, $payload, 'hello_world');
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+
+
     public function sendOtpTemplate(
         string $recipientPhone,
         string $otp,
         ?string $templateName = null,
         ?string $languageCode = null,
     ): array {
+        $template = $this->resolver->resolve(NotificationEventType::OTP);
+
+        Log::info('Resolved Notification Template', [
+            'template' => $template?->toArray(),
+        ]);
+
+        if ($template === null) {
+            throw new WhatsAppDeliveryException(
+                'No active WhatsApp template mapping found for OTP.'
+            );
+        }
+
+        Log::info('NEW CODE IS RUNNING');
+
         $payload = [
             'messaging_product' => 'whatsapp',
-            'to' => $recipientPhone,
-            'type' => 'template',
-            'template' => [
-                'name' => $templateName ?? config('whatsapp.templates.otp'),
-                'language' => [
-                    'code' => $languageCode ?? config('whatsapp.default_language'),
+            'to'                => $recipientPhone,
+            'type'              => 'template',
+            'template'          => [
+                'name'       => $templateName ?? $template->provider_template_name,
+                'language'   => [
+                    'code' => $languageCode ?? $template->language,
                 ],
                 'components' => [
                     [
-                        'type' => 'body',
+                        'type'       => 'body',
                         'parameters' => [
                             [
                                 'type' => 'text',
-                                'text' => $otp,
+                                'text' => (string) $otp,
+                            ],
+                        ],
+                    ],
+                    [
+                        'type'       => 'button',
+                        'sub_type'   => 'url',
+                        'index'      => '0',
+                        'parameters' => [
+                            [
+                                'type' => 'text',
+                                'text' => (string) $otp,
                             ],
                         ],
                     ],
@@ -65,7 +95,17 @@ final class WhatsAppService implements WhatsAppServiceInterface
             ],
         ];
 
-        return $this->sendTemplateMessage($recipientPhone, $payload, 'otp_template');
+        Log::info('Sending WhatsApp template message.', [
+            'recipient_phone' => $recipientPhone,
+            'template_type'   => NotificationEventType::OTP->value,
+            'payload'         => $payload,
+        ]);
+
+        return $this->sendTemplateMessage(
+            recipientPhone: $recipientPhone,
+            payload: $payload,
+            templateType: NotificationEventType::OTP->value,
+        );
     }
 
     /**

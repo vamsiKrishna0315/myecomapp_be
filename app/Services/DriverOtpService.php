@@ -8,8 +8,9 @@ use App\Models\Customer;
 use App\Models\Driver;
 use App\Models\Otps;
 use Carbon\Carbon;
+use App\Jobs\SendWhatsAppOtpJob;
 use Illuminate\Support\Facades\App;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 final class DriverOtpService
 {
@@ -36,8 +37,16 @@ final class DriverOtpService
             ]
         );
 
-        // 4. Send via SMS (mocked)
-        // TODO: Integrate with SMS provider
+        Log::info("Generated OTP for phone {$phone}: {$otp}");
+        Log::info('WhatsApp recipient phone', [
+            'original' => $phone,
+            'formatted' => '91' . ltrim($phone, '0'),
+        ]);
+
+        SendWhatsAppOtpJob::dispatch(
+             recipientPhone: '91' . ltrim($phone, '0'),
+            otp: (string) $otp,
+        );
 
         $response = [
             'success' => true,
