@@ -8,7 +8,7 @@ use App\Events\OrderCreated;
 use App\Models\Orders;
 use App\Models\StoreVendorOrders;
 use Exception;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 final class OrdersObserver
 {
@@ -49,7 +49,7 @@ final class OrdersObserver
                 }
             }
         } catch (Exception $e) {
-            Log::error('OrdersObserver fallback insertion failed: '.$e->getMessage(), ['order_id' => $order->id]);
+            Log::error('OrdersObserver fallback insertion failed: ' . $e->getMessage(), ['order_id' => $order->id]);
         }
 
         event(new OrderCreated($order));
@@ -58,5 +58,26 @@ final class OrdersObserver
     private function addStoreVendorToOrder($orders)
     {
         $result = getStoreVendorForOrder($orders);
+    }
+
+    public function updated(Orders $order): void
+    {
+        if ($order->wasChanged('current_status_code')) {
+
+            switch ($order->current_status_code) {
+
+                case 'driver_accepted':
+                    SendWhatsAppEtaJob::dispatch($order->id);
+                    break;
+
+                case 'delivered':
+                    SendWhatsAppDeliveredJob::dispatch($order->id);
+                    break;
+
+                case 'cancelled':
+                    SendWhatsAppOrderCancelledJob::dispatch($order->id);
+                    break;
+            }
+        }
     }
 }

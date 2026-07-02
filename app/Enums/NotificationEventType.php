@@ -8,11 +8,17 @@ enum NotificationEventType: string
 {
     case OTP = 'otp';
 
-    case ORDER_STATUS = 'order_status';
+    case ORDER_CREATED = 'order_created';
+
+    case ORDER_CANCELLED = 'order_cancelled';
 
     case PAYMENT = 'payment';
 
     case REFUND = 'refund';
 
     case WELCOME = 'welcome';
+
+    case ETA = 'eta';
+
+    case DELIVERED = 'delivered';
 }

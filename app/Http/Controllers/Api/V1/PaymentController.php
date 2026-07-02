@@ -9,7 +9,9 @@ use App\Services\Payments\PaymentManager;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Log;
+use App\Jobs\SendWhatsAppOrderCreatedJob;
+use Illuminate\Support\Facades\Log;
+
 
 final class PaymentController extends ResponseController
 {
@@ -47,6 +49,8 @@ final class PaymentController extends ResponseController
                         'payment_status' => 1, // 1 = Paid
                         'razorpay_payment_id' => $validated['razorpay_payment_id'],
                     ]);
+
+                     SendWhatsAppOrderCreatedJob::dispatch($order->id);
                 }
 
                 return $this->returnResponse([

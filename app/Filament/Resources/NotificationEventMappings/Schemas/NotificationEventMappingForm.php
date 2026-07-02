@@ -22,7 +22,7 @@ final class NotificationEventMappingForm
                             ->label('Event Type')
                             ->options([
                                 NotificationEventType::OTP->value => 'OTP',
-                                NotificationEventType::ORDER_STATUS->value => 'Order Status',
+                                NotificationEventType::ORDER_CREATED->value => 'Order Created',
                                 NotificationEventType::PAYMENT->value => 'Payment',
                                 NotificationEventType::REFUND->value => 'Refund',
                                 NotificationEventType::WELCOME->value => 'Welcome',
@@ -33,7 +33,7 @@ final class NotificationEventMappingForm
                         Select::make('reference_model')
                             ->label('Reference Model')
                             ->options([
-                                'App\Models\OrderStatus' => 'Order Status',
+                                'App\Models\OrderStatus' => 'Order Created',
                                 'App\Models\PaymentStatus' => 'Payment Status',
                                 'App\Models\RefundStatus' => 'Refund Status',
                                 'App\Models\Otps' => 'OTP',

@@ -9,6 +9,7 @@ use App\Models\Driver;
 use App\Models\Otps;
 use Carbon\Carbon;
 use App\Jobs\SendWhatsAppOtpJob;
+use App\Jobs\SendWhatsAppWelcomeJob;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 
@@ -37,15 +38,9 @@ final class DriverOtpService
             ]
         );
 
-        Log::info("Generated OTP for phone {$phone}: {$otp}");
-        Log::info('WhatsApp recipient phone', [
-            'original' => $phone,
-            'formatted' => '91' . ltrim($phone, '0'),
-        ]);
-
         SendWhatsAppOtpJob::dispatch(
              recipientPhone: '91' . ltrim($phone, '0'),
-            otp: (string) $otp,
+             otp: (string) $otp,
         );
 
         $response = [
@@ -105,6 +100,10 @@ final class DriverOtpService
                     'password' => null,
                     'status' => 1,
                 ]);
+
+                SendWhatsAppWelcomeJob::dispatch(
+                    recipientPhone: '91' . $customer->mobile,
+                );
 
                 return [
                     'success' => true,

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\Notification\NotificationTemplateResolver;
 use App\Enums\NotificationEventType;
+use App\Models\Orders;
 
 final class WhatsAppService implements WhatsAppServiceInterface
 {
@@ -226,6 +227,265 @@ final class WhatsAppService implements WhatsAppServiceInterface
             mb_rtrim((string) config('whatsapp.base_url'), '/'),
             config('whatsapp.api_version'),
             config('whatsapp.phone_number_id'),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function sendWelcomeTemplate(
+        string $recipientPhone,
+        ?string $templateName = null,
+        ?string $languageCode = null,
+    ): array {
+        $template = $this->resolver->resolve(NotificationEventType::WELCOME);
+
+        Log::info('Resolved Welcome Notification Template', [
+            'template' => $template?->toArray(),
+        ]);
+
+        if ($template === null) {
+            throw new WhatsAppDeliveryException(
+                'No active WhatsApp template mapping found for Welcome.'
+            );
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $recipientPhone,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName ?? $template->provider_template_name,
+                'language' => [
+                    'code' => $languageCode ?? $template->language,
+                ],
+            ],
+        ];
+
+        return $this->sendTemplateMessage(
+            recipientPhone: $recipientPhone,
+            payload: $payload,
+            templateType: NotificationEventType::WELCOME->value,
+        );
+    }
+
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function sendOrderCreatedTemplate(
+        Orders $order,
+        ?string $templateName = null,
+        ?string $languageCode = null,
+    ): array {
+
+        $template = $this->resolver->resolve(NotificationEventType::ORDER_CREATED);
+
+        Log::info('Resolved Order Created Notification Template', [
+            'template' => $template?->toArray(),
+        ]);
+
+        if ($template === null) {
+            throw new WhatsAppDeliveryException(
+                'No active WhatsApp template mapping found for Order Created.'
+            );
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => '91' . $order->customer->mobile,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName ?? $template->provider_template_name,
+                'language' => [
+                    'code' => $languageCode ?? $template->language,
+                ],
+                'components' => [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            [
+                                'type' => 'text',
+                                'text' => (string) $order->id,
+                            ],
+                            [
+                                'type' => 'text',
+                                'text' => number_format((float) $order->total_amount, 2),
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        return $this->sendTemplateMessage(
+            recipientPhone: '91' . $order->customer->mobile,
+            payload: $payload,
+            templateType: NotificationEventType::ORDER_CREATED->value,
+        );
+    }
+
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function sendEtaTemplate(
+        Orders $order,
+        ?string $templateName = null,
+        ?string $languageCode = null,
+    ): array {
+
+        $template = $this->resolver->resolve(NotificationEventType::ETA);
+
+        Log::info('Resolved ETA Notification Template', [
+            'template' => $template?->toArray(),
+        ]);
+
+        if ($template === null) {
+            throw new WhatsAppDeliveryException(
+                'No active WhatsApp template mapping found for ETA.'
+            );
+        }
+
+        $recipientPhone = '91' . $order->customer->mobile;
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $recipientPhone,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName ?? $template->provider_template_name,
+                'language' => [
+                    'code' => $languageCode ?? $template->language,
+                ],
+                'components' => [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            [
+                                'type' => 'text',
+                                'text' => (string) $order->id,
+                            ],
+                            [
+                                'type' => 'text',
+                                'text' => (string) $order->delivery_time_slot,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        return $this->sendTemplateMessage(
+            recipientPhone: $recipientPhone,
+            payload: $payload,
+            templateType: NotificationEventType::ETA->value,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function sendDeliveredTemplate(
+        Orders $order,
+        ?string $templateName = null,
+        ?string $languageCode = null,
+    ): array {
+
+        $template = $this->resolver->resolve(NotificationEventType::DELIVERED);
+
+        Log::info('Resolved Delivered Notification Template', [
+            'template' => $template?->toArray(),
+        ]);
+
+        if ($template === null) {
+            throw new WhatsAppDeliveryException(
+                'No active WhatsApp template mapping found for Delivered.'
+            );
+        }
+
+        $recipientPhone = '91' . $order->customer->mobile;
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $recipientPhone,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName ?? $template->provider_template_name,
+                'language' => [
+                    'code' => $languageCode ?? $template->language,
+                ],
+                'components' => [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            [
+                                'type' => 'text',
+                                'text' => (string) $order->id,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        return $this->sendTemplateMessage(
+            recipientPhone: $recipientPhone,
+            payload: $payload,
+            templateType: NotificationEventType::DELIVERED->value,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function sendOrderCancelledTemplate(
+        Orders $order,
+        ?string $templateName = null,
+        ?string $languageCode = null,
+    ): array {
+
+        $template = $this->resolver->resolve(NotificationEventType::ORDER_CANCELLED);
+
+        Log::info('Resolved Order Cancelled Notification Template', [
+            'template' => $template?->toArray(),
+        ]);
+
+        if ($template === null) {
+            throw new WhatsAppDeliveryException(
+                'No active WhatsApp template mapping found for Order Cancelled.'
+            );
+        }
+
+        $recipientPhone = '91' . $order->customer->mobile;
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $recipientPhone,
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName ?? $template->provider_template_name,
+                'language' => [
+                    'code' => $languageCode ?? $template->language,
+                ],
+                'components' => [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            [
+                                'type' => 'text',
+                                'text' => (string) $order->id,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        return $this->sendTemplateMessage(
+            recipientPhone: $recipientPhone,
+            payload: $payload,
+            templateType: NotificationEventType::ORDER_CANCELLED->value,
         );
     }
 }
