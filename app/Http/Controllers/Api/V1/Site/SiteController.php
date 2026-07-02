@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreContactInfo;
 use App\Models\WhyUs;
+use App\Models\PaymentMethod;
 use App\Services\Banners\BannerMediaService;
 
 final class SiteController extends ResponseController
@@ -67,7 +68,7 @@ final class SiteController extends ResponseController
     public function getStoreData()
     {
         $storeData = Store::where('status', 1)
-                        //  ->where('show_live', 1)
+            //  ->where('show_live', 1)
             ->first();
 
         return $storeData ?? [];
@@ -201,6 +202,14 @@ final class SiteController extends ResponseController
             'products' => Product::with(['category.meta', 'cuttypes', 'meta'])
                 ->visibleForCatalog()
                 ->get(),
+            'payment_options' => PaymentMethod::where('is_active', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn($paymentMethod) => [
+                    'value' => $paymentMethod->code,
+                    'title' => $paymentMethod->title,
+                    'description' => $paymentMethod->description,
+                ]),
         ];
 
         return $this->returnResponse($data, 'Site data retrieved successfully');

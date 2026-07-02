@@ -16,6 +16,7 @@ final class DatabaseSeeder extends Seeder
             CustomRolesSeeder::class,
             UsersSeeder::class,
             SiteDataSeeder::class,
+            PaymentMethodSeeder::class,
         ]);
     }
 }
