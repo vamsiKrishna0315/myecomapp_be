@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // CORS must run before route matching so preflight OPTIONS requests
         // receive the required headers even when only POST/PUT routes exist.
-        $middleware->append([
+        $middleware->prepend([
             Illuminate\Http\Middleware\HandleCors::class,
         ]);
     })

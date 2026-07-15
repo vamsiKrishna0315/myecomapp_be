@@ -45,6 +45,9 @@ Route::prefix('v1/customer')->group(function () {
 
     Route::get('/products/{product}', [App\Http\Controllers\Api\V1\Products\ProductsController::class, 'fetchOne']);
 
+    // Referral coupon eligibility check - public so guests opening a share link can be checked pre-login
+    Route::get('/referral/check', [App\Http\Controllers\Api\V1\Coupon\ReferralController::class, 'check'])->middleware('throttle:20,1');
+
     Route::middleware(['auth:customer-api', 'throttle:60,1'])->group(function () {
 
         // Authentication
@@ -88,6 +91,10 @@ Route::prefix('v1/customer')->group(function () {
 
         // Coupon
         Route::post('/coupon/validate', [App\Http\Controllers\Api\V1\Coupon\CouponController::class, 'validateCoupon'])->middleware('throttle:10,1');
+
+        // Referral coupon
+        Route::post('/referral/generate', [App\Http\Controllers\Api\V1\Coupon\ReferralController::class, 'generate']);
+        Route::get('/referral/analytics', [App\Http\Controllers\Api\V1\Coupon\ReferralController::class, 'analytics']);
 
         // Payment
         Route::post('/payment/verify', [App\Http\Controllers\Api\V1\PaymentController::class, 'verify']);

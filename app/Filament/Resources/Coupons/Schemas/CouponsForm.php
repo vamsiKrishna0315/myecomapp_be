@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Coupons\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
+use App\Enums\CouponType;
+use Closure;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
-use App\Enums\CouponType;
+use Filament\Schemas\Schema;
 
-class CouponsForm
+final class CouponsForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -51,22 +54,19 @@ class CouponsForm
                                     ->required()
                                     ->numeric()
                                     ->minValue(0)
-                                    ->label(fn (Get $get): string => 
-                                        $get('type') == CouponType::Percentage->value 
-                                            ? 'Percentage (%)' 
+                                    ->label(fn (Get $get): string => $get('type') === CouponType::Percentage->value
+                                            ? 'Percentage (%)'
                                             : 'Fixed Amount (₹)'
                                     )
-                                    ->placeholder(fn (Get $get): string => 
-                                        $get('type') == CouponType::Percentage->value 
-                                            ? 'e.g., 20 (for 20%)' 
+                                    ->placeholder(fn (Get $get): string => $get('type') === CouponType::Percentage->value
+                                            ? 'e.g., 20 (for 20%)'
                                             : 'e.g., 100 (for ₹100)'
                                     )
-                                    ->suffix(fn (Get $get): string => 
-                                        $get('type') == CouponType::Percentage->value ? '%' : '₹'
+                                    ->suffix(fn (Get $get): string => $get('type') === CouponType::Percentage->value ? '%' : '₹'
                                     )
                                     ->rules([
-                                        fn (Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
-                                            if ($get('type') == CouponType::Percentage->value && $value > 100) {
+                                        fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                                            if ($get('type') === CouponType::Percentage->value && $value > 100) {
                                                 $fail('Percentage cannot be greater than 100%.');
                                             }
                                         },
@@ -89,7 +89,7 @@ class CouponsForm
                                     ->label('Maximum Discount Amount')
                                     ->placeholder('e.g., 1000')
                                     ->helperText('Maximum discount limit (for percentage coupons)')
-                                    ->visible(fn (Get $get): bool => $get('type') == CouponType::Percentage->value)
+                                    ->visible(fn (Get $get): bool => $get('type') === CouponType::Percentage->value)
                                     ->columnSpan(1),
                             ]),
 
@@ -172,6 +172,26 @@ class CouponsForm
                             ->required()
                             ->label('Status')
                             ->helperText('Active coupons can be used by customers'),
+                    ])
+                    ->columns(1),
+
+                Section::make('Referral')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Select::make('customer_id')
+                                    ->label('Owning Customer')
+                                    ->relationship('customer', 'first_name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->helperText('Set when this coupon is a customer\'s referral code')
+                                    ->columnSpan(1),
+
+                                Toggle::make('is_referral')
+                                    ->label('Referral Coupon')
+                                    ->helperText('Referral coupons are auto-generated per customer and blocked for self-use')
+                                    ->columnSpan(1),
+                            ]),
                     ])
                     ->columns(1),
             ]);

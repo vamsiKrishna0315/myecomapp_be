@@ -14,6 +14,7 @@ final class Orders extends Model
         'order_number',
         'razorpay_order_id',
         'razorpay_payment_id',
+        'payment_method',
         'customer_id',
         'delivery_address_id',
         'billing_address_id',

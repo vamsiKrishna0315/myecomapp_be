@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Order;
 
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Api\V1\ResponseController;
 use App\Models\Orders;
 use App\Models\OrderStatuses;
 use App\Models\OrderStatusTracking;
 use Illuminate\Http\Request;
-use Log;
+use Illuminate\Support\Facades\DB;
 
 final class OrderCancellationController extends ResponseController
 {
@@ -20,10 +21,6 @@ final class OrderCancellationController extends ResponseController
             ->where('status', 1)
             ->get();
 
-        Log::info('OrderCancellationController invoked', [
-            'order_uuid' => $orderUuid,
-            'order_found' => $orderData->toArray(),
-        ]);
         $canCancel = true;
         $reason = null;
         if ($orderData->isNotEmpty()) {
@@ -37,27 +34,29 @@ final class OrderCancellationController extends ResponseController
             $reason = 'Order not found.';
         }
 
-        Log::info('OrderCancellationController invoked', [
-            'order_uuid' => $orderUuid,
-            'order_found' => $orderData->isNotEmpty() ? $orderData->toArray() : null,
-            'can_cancel' => $canCancel,
-            'reason' => $reason,
-        ]);
+        if (! $canCancel) {
+            return $this->sendError($reason, 404);
+        }
 
-        if ($canCancel) {
-            $getCancelledStatus = OrderStatuses::where('code', 'cancelled')->first();
-            if (! $getCancelledStatus) {
-                return $this->sendError('Cancelled status not found', 404);
-            }
-            $order = $orderData->first();
+        $getCancelledStatus = OrderStatuses::where('code', 'cancelled')->first();
+        if (! $getCancelledStatus) {
+            return $this->sendError('Cancelled status not found', 404);
+        }
+
+        $order = $orderData->first();
+
+        DB::transaction(function () use ($order, $getCancelledStatus, $request) {
             $order->update([
                 'current_status_id' => $getCancelledStatus->id,
                 'current_status_code' => $getCancelledStatus->code,
                 'is_cancelled' => 1,
                 'cancelled_at' => now(),
+                'payment_status' => $order->payment_status === PaymentStatus::Paid->value
+                    ? $order->payment_status
+                    : PaymentStatus::Failed->value,
             ]);
 
-            $trackingData = [
+            OrderStatusTracking::create([
                 'order_id' => $order->id,
                 'customer_id' => $order->customer_id,
                 'driver_id' => $order->driver_id ?? null,
@@ -69,15 +68,13 @@ final class OrderCancellationController extends ResponseController
                 'lat' => $request->input('lat', null),
                 'lng' => $request->input('lng', null),
                 'status' => 1,
-            ];
-            $orderStatusTracking = OrderStatusTracking::create($trackingData);
-            // call that action to insert cancellation record
-            $cancellationData = [
-                'reason_description' => $request->input('reason', 'Cancelled by customer'),
-            ];
-            (new \App\Actions\Order\OrderCancellationAction())->execute($order, $cancellationData);
+            ]);
 
-            return $this->returnResponse(['message' => 'Order cancelled successfully.'], 'Order cancelled successfully.');
-        }
+            (new \App\Actions\Order\OrderCancellationAction())->execute($order, [
+                'reason_description' => $request->input('reason', 'Cancelled by customer'),
+            ]);
+        });
+
+        return $this->returnResponse(['message' => 'Order cancelled successfully.'], 'Order cancelled successfully.');
     }
 }

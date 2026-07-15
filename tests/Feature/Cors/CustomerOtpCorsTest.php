@@ -14,3 +14,16 @@ it('allows preflight requests from the customer frontend origin', function (): v
         ->assertHeader('Access-Control-Allow-Origin', 'https://myecomapp-fe.vercel.app')
         ->assertHeader('Access-Control-Allow-Credentials', 'true');
 });
+
+it('allows localhost preflight requests to the protected cart endpoint', function (): void {
+    $response = $this->withHeaders([
+        'Origin' => 'http://localhost:3000',
+        'Access-Control-Request-Method' => 'POST',
+        'Access-Control-Request-Headers' => 'content-type,authorization',
+    ])->options('/api/v1/customer/cart');
+
+    $response
+        ->assertNoContent()
+        ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+        ->assertHeader('Access-Control-Allow-Credentials', 'true');
+});

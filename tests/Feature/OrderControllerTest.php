@@ -50,6 +50,7 @@ it('creates order successfully when payment creation succeeds', function (): voi
         'delivery_time_slot' => '10:00-12:00',
         'billing_type_id' => 1,
         'provider' => 'razorpay',
+        'payment_method' => 'upi',
     ];
 
     $response = $this->postJson('/api/v1/customer/order', $orderData);
@@ -72,6 +73,7 @@ it('creates order successfully when payment creation succeeds', function (): voi
     $this->assertDatabaseHas('orders', [
         'customer_id' => $customer->id,
         'razorpay_order_id' => 'order_test123',
+        'payment_method' => 'upi',
     ]);
 });
 

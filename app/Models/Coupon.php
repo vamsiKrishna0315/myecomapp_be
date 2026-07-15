@@ -1,12 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Coupon extends Model
+final class Coupon extends Model
 {
     protected $fillable = [
+        'customer_id',
+        'is_referral',
         'code',
         'type',
         'value',
@@ -22,6 +28,7 @@ class Coupon extends Model
     ];
 
     protected $casts = [
+        'is_referral' => 'boolean',
         'value' => 'decimal:2',
         'min_order_amount' => 'decimal:2',
         'max_discount_amount' => 'decimal:2',
@@ -32,4 +39,17 @@ class Coupon extends Model
         'valid_until' => 'datetime',
         'status' => 'integer',
     ];
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    /**
+     * Orders placed using this coupon's code (matched by code, not a foreign key).
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Orders::class, 'coupon_code', 'code');
+    }
 }

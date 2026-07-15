@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Coupons\Tables;
 
+use App\Enums\CouponType;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Enums\CouponType;
 
-class CouponsTable
+final class CouponsTable
 {
     public static function configure(Table $table): Table
     {
@@ -44,16 +46,17 @@ class CouponsTable
                 TextColumn::make('value')
                     ->label('Discount Value')
                     ->formatStateUsing(function ($record): string {
-                        if ($record->type == CouponType::Percentage->value) {
-                            return $record->value . '%';
+                        if ($record->type === CouponType::Percentage->value) {
+                            return $record->value.'%';
                         }
-                        return '₹' . number_format($record->value, 2);
+
+                        return '₹'.number_format((float) $record->value, 2);
                     })
                     ->sortable(),
 
                 TextColumn::make('min_order_amount')
                     ->label('Min Order')
-                    ->formatStateUsing(fn (?string $state): string => $state ? '₹' . number_format($state, 2) : 'No minimum')
+                    ->formatStateUsing(fn (?string $state): string => $state ? '₹'.number_format((float) $state, 2) : 'No minimum')
                     ->sortable(),
 
                 TextColumn::make('usage_limit')
@@ -66,6 +69,16 @@ class CouponsTable
                     ->sortable()
                     ->badge()
                     ->color(fn (string $state): string => $state > 0 ? 'success' : 'gray'),
+
+                TextColumn::make('customer.first_name')
+                    ->label('Referral Owner')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                IconColumn::make('is_referral')
+                    ->label('Referral')
+                    ->boolean()
+                    ->sortable(),
 
                 TextColumn::make('valid_from')
                     ->label('Valid From')
@@ -81,12 +94,14 @@ class CouponsTable
                     ->color(function ($record): string {
                         $validUntil = \Carbon\Carbon::parse($record->valid_until);
                         $now = now();
-                        
+
                         if ($validUntil->isPast()) {
                             return 'danger'; // Expired
-                        } elseif ($validUntil->diffInDays($now) <= 7) {
+                        }
+                        if ($validUntil->diffInDays($now) <= 7) {
                             return 'warning'; // Expiring soon
                         }
+
                         return 'success'; // Valid
                     }),
 
@@ -139,13 +154,14 @@ class CouponsTable
                             $data['validity_status'],
                             function (Builder $query, $status) {
                                 $now = now();
+
                                 return match ($status) {
                                     'active' => $query->where('valid_from', '<=', $now)
-                                                   ->where('valid_until', '>=', $now),
+                                        ->where('valid_until', '>=', $now),
                                     'expired' => $query->where('valid_until', '<', $now),
                                     'upcoming' => $query->where('valid_from', '>', $now),
                                     'expiring_soon' => $query->where('valid_until', '>=', $now)
-                                                           ->where('valid_until', '<=', $now->addDays(7)),
+                                        ->where('valid_until', '<=', $now->addDays(7)),
                                     default => $query,
                                 };
                             }

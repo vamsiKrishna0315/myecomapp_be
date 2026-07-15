@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Order;
 
 use App\Actions\BaseAction;
+use App\Enums\CouponType;
 use App\Models\Coupon;
 use App\Models\Orders;
 
@@ -101,9 +102,9 @@ final class CalculateOrderTotals extends BaseAction
         // Calculate discount
         $discount = 0.0;
 
-        if ($coupon->type === 1) { // Percentage
+        if ((int) $coupon->type === CouponType::Percentage->value) {
             $discount = (float) (($subtotal * (float) $coupon->value) / 100);
-        } elseif ($coupon->type === 2) { // Fixed amount
+        } elseif ((int) $coupon->type === CouponType::FixedAmount->value) {
             $discount = (float) $coupon->value;
         }
 

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Order;
 
+use App\Models\Coupon;
 use App\Models\CuttypeProduct;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 use Log;
 
 final class StoreOrderRequest extends FormRequest
@@ -202,6 +204,19 @@ final class StoreOrderRequest extends FormRequest
                 //         'The selected billing address does not belong to you.'
                 //     );
                 // }
+            }
+
+            // Custom validation: Block self-referral - a customer cannot use their own referral coupon
+            if ($this->filled('coupon_code')) {
+                $customer = Auth::guard('customer-api')->user();
+                $coupon = Coupon::where('code', mb_trim((string) $this->coupon_code))->first();
+
+                if ($customer && $coupon && $coupon->is_referral && $coupon->customer_id === $customer->id) {
+                    $validator->errors()->add(
+                        'coupon_code',
+                        'You cannot use your own referral code.'
+                    );
+                }
             }
 
             // Custom validation: Verify item totals match calculations

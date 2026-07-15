@@ -57,6 +57,7 @@ final class CreateOrder extends BaseAction
             'delivery_charge' => $totals['delivery_charge'],
             'total_amount' => $totals['total_amount'],
             'billing_type_id' => $data['billing_type_id'],
+            'payment_method' => $data['payment_method'] ?? null,
             'payment_status' => 0, // 0 = pending
             'status' => 1, // Active
             'current_status_id' => 1,
