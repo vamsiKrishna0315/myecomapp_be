@@ -25,6 +25,10 @@ return [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'https://myecomapp-fe.vercel.app',
+        // Capacitor-wrapped driver app (Yumeat Driver) — served from this
+        // fixed virtual origin regardless of the API host it talks to.
+        'http://localhost',
+        'https://localhost',
     ],
 
     'allowed_origins_patterns' => [

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Events\OrderCreated;
+use App\Jobs\SendWhatsAppDeliveredJob;
+use App\Jobs\SendWhatsAppEtaJob;
+use App\Jobs\SendWhatsAppOrderCancelledJob;
 use App\Models\Orders;
 use App\Models\StoreVendorOrders;
 use Exception;
@@ -49,15 +52,10 @@ final class OrdersObserver
                 }
             }
         } catch (Exception $e) {
-            Log::error('OrdersObserver fallback insertion failed: ' . $e->getMessage(), ['order_id' => $order->id]);
+            Log::error('OrdersObserver fallback insertion failed: '.$e->getMessage(), ['order_id' => $order->id]);
         }
 
         event(new OrderCreated($order));
-    }
-
-    private function addStoreVendorToOrder($orders)
-    {
-        $result = getStoreVendorForOrder($orders);
     }
 
     public function updated(Orders $order): void
@@ -79,5 +77,10 @@ final class OrdersObserver
                     break;
             }
         }
+    }
+
+    private function addStoreVendorToOrder($orders)
+    {
+        $result = getStoreVendorForOrder($orders);
     }
 }

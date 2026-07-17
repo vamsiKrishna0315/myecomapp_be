@@ -27,3 +27,16 @@ it('allows localhost preflight requests to the protected cart endpoint', functio
         ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
         ->assertHeader('Access-Control-Allow-Credentials', 'true');
 });
+
+it('allows preflight requests from the Capacitor-wrapped driver app origin', function (): void {
+    $response = $this->withHeaders([
+        'Origin' => 'http://localhost',
+        'Access-Control-Request-Method' => 'POST',
+        'Access-Control-Request-Headers' => 'content-type,authorization',
+    ])->options('/api/driver/send-otp');
+
+    $response
+        ->assertNoContent()
+        ->assertHeader('Access-Control-Allow-Origin', 'http://localhost')
+        ->assertHeader('Access-Control-Allow-Credentials', 'true');
+});

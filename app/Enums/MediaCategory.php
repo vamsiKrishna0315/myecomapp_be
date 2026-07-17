@@ -22,16 +22,7 @@ enum MediaCategory: string
     case Insurance = 'insurance';
     case Registrations = 'registrations';
     case UserDocuments = 'user-documents';
-
-    public function isPublic(): bool
-    {
-        return in_array($this, self::publicCategories(), true);
-    }
-
-    public function isPrivate(): bool
-    {
-        return in_array($this, self::privateCategories(), true);
-    }
+    case ProofOfDelivery = 'proof-of-delivery';
 
     /**
      * @return array<int, self>
@@ -63,6 +54,7 @@ enum MediaCategory: string
             self::Insurance,
             self::Registrations,
             self::UserDocuments,
+            self::ProofOfDelivery,
         ];
     }
 
@@ -99,5 +91,15 @@ enum MediaCategory: string
     public static function allValues(): array
     {
         return array_map(static fn (self $category): string => $category->value, self::allCategories());
+    }
+
+    public function isPublic(): bool
+    {
+        return in_array($this, self::publicCategories(), true);
+    }
+
+    public function isPrivate(): bool
+    {
+        return in_array($this, self::privateCategories(), true);
     }
 }

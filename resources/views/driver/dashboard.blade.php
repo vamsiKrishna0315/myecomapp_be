@@ -70,7 +70,7 @@
         </div>
 
         <!-- Pending Orders Tab -->
-        <div x-show="activeTab === 'pending'">
+        <div x-show="activeTab === 'pending'" class="space-y-4">
             <template x-if="pendingOrders.length === 0">
                 <div class="text-center py-12">
                     <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +130,7 @@
         </div>
 
         <!-- Active Orders Tab -->
-        <div x-show="activeTab === 'active'">
+        <div x-show="activeTab === 'active'" class="space-y-4">
             <template x-if="activeOrders.length === 0">
                 <div class="text-center py-12">
                     <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +199,7 @@
         </div>
 
         <!-- Completed Orders Tab -->
-        <div x-show="activeTab === 'completed'">
+        <div x-show="activeTab === 'completed'" class="space-y-4">
             <template x-if="completedOrders.length === 0">
                 <div class="text-center py-12">
                     <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

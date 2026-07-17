@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Driver App</title>
+</head>
+<body>
+<script>
+    // Entry point — mirrors the old '/driver' route redirecting to login,
+    // but skips straight to the dashboard if already logged in.
+    window.location.replace(localStorage.getItem('driver_token') ? 'dashboard.html' : 'login.html');
+</script>
+</body>
+</html>

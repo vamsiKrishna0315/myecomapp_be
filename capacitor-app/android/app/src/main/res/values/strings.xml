@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yumeat Driver</string>
+    <string name="title_activity_main">Yumeat Driver</string>
+    <string name="package_name">com.yumeat.driverapp</string>
+    <string name="custom_url_scheme">com.yumeat.driverapp</string>
+</resources>

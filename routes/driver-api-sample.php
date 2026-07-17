@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Driver\DriverLocationController;
+use App\Http\Controllers\Api\V1\Driver\DriverOrderCancellationController;
 use App\Http\Controllers\Api\V1\Driver\DriverOrderController;
 use App\Http\Controllers\Api\V1\Driver\DriverOrderStatusController;
+use App\Http\Controllers\Api\V1\Driver\DriverProfileController;
+use App\Http\Controllers\Api\V1\Driver\DriverProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\OtpController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,8 +16,7 @@ use Illuminate\Support\Facades\Route;
 | Driver API Routes
 |--------------------------------------------------------------------------
 |
-| These are sample API endpoints that the Driver Web App expects.
-| Implement these endpoints with your actual business logic.
+| API endpoints consumed by the Driver Web App (resources/views/driver).
 |
 */
 
@@ -46,61 +47,17 @@ Route::prefix('driver')->group(function () {
 
         Route::put('/orders/{orderId}/status', [DriverOrderStatusController::class, 'update']);
 
-        // Cancel order
-        Route::post('/orders/{orderId}/cancel', function (Request $request, string $orderId) {
-            // TODO: Cancel order
-            // Only allowed before acceptance
-            // 1. Check order status
-            // 2. Validate cancellation reason
-            // 3. Request customer confirmation
-            // 4. If returned, reassign to same store
+        // Cancel order (only allowed before driver acceptance)
+        Route::post('/orders/{orderId}/cancel', DriverOrderCancellationController::class);
 
-            $request->validate([
-                'reason' => 'required|string',
-                'notes' => 'nullable|string',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Order cancelled successfully',
-                'requires_customer_confirmation' => true,
-            ]);
-        });
+        // Upload proof-of-delivery photo
+        Route::post('/orders/{orderId}/proof-of-delivery', DriverProofOfDeliveryController::class);
 
         // Get driver profile
-        Route::get('/profile', function (Request $request) {
-            // TODO: Return authenticated driver's profile
-
-            $driver = $request->user();
-
-            return response()->json([
-                'id' => $driver->id,
-                'name' => $driver->name,
-                'phone' => $driver->mobile,
-                'email' => $driver->email,
-                'vehicle_type' => $driver->vehicle_type ?? 'Bike',
-                'vehicle_number' => $driver->vehicle_number ?? 'Not provided',
-                'total_deliveries' => 127,
-                'rating' => '4.8',
-            ]);
-        });
+        Route::get('/profile', [DriverProfileController::class, 'show']);
 
         // Update driver profile
-        Route::put('/profile', function (Request $request) {
-            // TODO: Update driver profile
-
-            $request->validate([
-                'name' => 'sometimes|string|max:255',
-                'email' => 'sometimes|email',
-                'vehicle_type' => 'sometimes|string',
-                'vehicle_number' => 'sometimes|string',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile updated successfully',
-            ]);
-        });
+        Route::put('/profile', [DriverProfileController::class, 'update']);
 
     });
 });

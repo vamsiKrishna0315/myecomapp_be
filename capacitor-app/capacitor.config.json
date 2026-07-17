@@ -1,0 +1,17 @@
+{
+  "appId": "com.yumeat.driverapp",
+  "appName": "Yumeat Driver",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "useLegacyBridge": true
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

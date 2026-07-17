@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="theme-color" content="#16a34a">
+    <title>Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <style>
+        body { overscroll-behavior-y: contain; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        :root { --primary-green: #16a34a; --primary-green-dark: #15803d; }
+        @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+        .skeleton { animation: shimmer 1.2s ease-in-out infinite; background: linear-gradient(to right, #f0f0f0 8%, #e0e0e0 18%, #f0f0f0 33%); background-size: 800px 104px; }
+        .card-hover { transition: all 0.2s ease; }
+        .card-hover:active { transform: scale(0.98); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+<div class="min-h-screen bg-gray-50 pb-20" x-data="driverDashboard()" x-init="init()">
+
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-40 bg-white shadow-sm">
+        <div class="flex items-center justify-between px-4 py-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">Driver App</h1>
+                <p class="text-sm text-gray-500" x-text="driverName"></p>
+            </div>
+            <a href="profile.html" class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Sticky Tabs -->
+        <div class="flex border-b border-gray-200">
+            <button
+                @click="activeTab = 'pending'"
+                :class="activeTab === 'pending' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500'"
+                class="flex-1 py-3 px-4 text-sm font-medium border-b-2 transition-colors"
+            >
+                Pending
+                <span x-show="pendingOrders.length > 0" class="ml-1 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full" x-text="pendingOrders.length"></span>
+            </button>
+            <button
+                @click="activeTab = 'active'"
+                :class="activeTab === 'active' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500'"
+                class="flex-1 py-3 px-4 text-sm font-medium border-b-2 transition-colors"
+            >
+                Active
+                <span x-show="activeOrders.length > 0" class="ml-1 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full" x-text="activeOrders.length"></span>
+            </button>
+            <button
+                @click="activeTab = 'completed'"
+                :class="activeTab === 'completed' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500'"
+                class="flex-1 py-3 px-4 text-sm font-medium border-b-2 transition-colors"
+            >
+                Completed
+            </button>
+        </div>
+    </header>
+
+    <!-- Loading Skeleton -->
+    <div x-show="loading" class="px-4 py-4 space-y-4">
+        <template x-for="i in 3" :key="i">
+            <div class="bg-white rounded-xl p-4 shadow-sm">
+                <div class="skeleton h-4 w-1/3 mb-2 rounded"></div>
+                <div class="skeleton h-6 w-full mb-3 rounded"></div>
+                <div class="skeleton h-4 w-2/3 mb-2 rounded"></div>
+                <div class="skeleton h-4 w-full mb-3 rounded"></div>
+                <div class="flex gap-2">
+                    <div class="skeleton h-10 flex-1 rounded-lg"></div>
+                    <div class="skeleton h-10 flex-1 rounded-lg"></div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Orders List -->
+    <div x-show="!loading" class="px-4 py-4 space-y-4">
+        <div x-show="errorMessage" x-transition class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-600" x-text="errorMessage"></p>
+        </div>
+
+        <!-- Pending Orders Tab -->
+        <div x-show="activeTab === 'pending'" class="space-y-4">
+            <template x-if="pendingOrders.length === 0">
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                    <p class="text-gray-500">No pending orders</p>
+                </div>
+            </template>
+
+            <template x-for="order in pendingOrders" :key="order.id">
+                <div @click="viewOrderDetail(order.id)" class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all card-hover cursor-pointer">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <p class="text-xs text-gray-500">Order ID</p>
+                                <p class="text-lg font-bold text-gray-800" x-text="order.id"></p>
+                            </div>
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">
+                                Pending
+                            </span>
+                        </div>
+
+                        <div class="mb-3 pb-3 border-b border-gray-100">
+                            <p class="text-xs text-gray-500 mb-1">Assigned Store</p>
+                            <p class="font-semibold text-gray-800" x-text="order.store_name"></p>
+                        </div>
+
+                        <div class="mb-3 pb-3 border-b border-gray-100">
+                            <p class="text-xs text-gray-500 mb-1">Products</p>
+                            <p class="text-sm text-gray-700" x-text="order.product_summary"></p>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-xs text-gray-500 mb-1">Delivery To</p>
+                            <p class="text-sm text-gray-700" x-text="order.delivery_address"></p>
+                        </div>
+
+                        <div>
+                            <button
+                                @click.stop="updateStatusModal(order)"
+                                class="w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center"
+                            >
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Accept
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Active Orders Tab -->
+        <div x-show="activeTab === 'active'" class="space-y-4">
+            <template x-if="activeOrders.length === 0">
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <p class="text-gray-500">No active orders</p>
+                </div>
+            </template>
+
+            <template x-for="order in activeOrders" :key="order.id">
+                <div @click="viewOrderDetail(order.id)" class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all card-hover cursor-pointer border-l-4 border-green-600">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <p class="text-xs text-gray-500">Order ID</p>
+                                <p class="text-lg font-bold text-gray-800" x-text="order.id"></p>
+                            </div>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full" x-text="order.status_label">
+                            </span>
+                        </div>
+
+                        <div class="mb-3 pb-3 border-b border-gray-100">
+                            <p class="text-xs text-gray-500 mb-1">Assigned Store</p>
+                            <p class="font-semibold text-gray-800" x-text="order.store_name"></p>
+                        </div>
+
+                        <div class="mb-3 pb-3 border-b border-gray-100">
+                            <p class="text-xs text-gray-500 mb-1">Products</p>
+                            <p class="text-sm text-gray-700" x-text="order.product_summary"></p>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-xs text-gray-500 mb-1">Delivery To</p>
+                            <p class="text-sm text-gray-700" x-text="order.delivery_address"></p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                @click.stop="openMaps(order)"
+                                class="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center"
+                            >
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Navigate
+                            </button>
+                            <button
+                                @click.stop="updateStatusModal(order)"
+                                class="py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center"
+                            >
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Completed Orders Tab -->
+        <div x-show="activeTab === 'completed'" class="space-y-4">
+            <template x-if="completedOrders.length === 0">
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-gray-500">No completed orders</p>
+                </div>
+            </template>
+
+            <template x-for="order in completedOrders" :key="order.id">
+                <div @click="viewOrderDetail(order.id)" class="bg-white rounded-xl shadow-sm hover:shadow-md transition-all card-hover cursor-pointer opacity-75">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <p class="text-xs text-gray-500">Order ID</p>
+                                <p class="text-lg font-bold text-gray-800" x-text="order.id"></p>
+                            </div>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+                                Completed
+                            </span>
+                        </div>
+
+                        <div class="mb-3">
+                            <p class="text-xs text-gray-500 mb-1">Store</p>
+                            <p class="font-semibold text-gray-700" x-text="order.store_name"></p>
+                        </div>
+
+                        <div class="flex items-center text-xs text-gray-500">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Completed <span x-text="order.completed_at"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div x-show="showStatusModal" @click.self="showStatusModal = false" class="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50" style="display: none;">
+        <div @click.away="showStatusModal = false" class="bg-white rounded-t-3xl w-full max-w-lg p-6 transform transition-transform" :class="showStatusModal ? 'translate-y-0' : 'translate-y-full'">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Update Order Status</h3>
+                <button @click="showStatusModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-2 mb-6">
+                <template x-for="status in availableStatuses" :key="status.id">
+                    <button
+                        @click="status.is_clickable && updateOrderStatus(status.api_status)"
+                        :disabled="!status.is_clickable"
+                        :class="status.is_clickable ? 'bg-green-50 border-green-600 cursor-pointer' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'"
+                        class="w-full p-4 border-2 rounded-xl text-left transition-all"
+                    >
+                        <p class="font-semibold" :class="status.is_clickable ? 'text-gray-800' : 'text-gray-500'" x-text="status.name"></p>
+                        <p class="text-xs" :class="status.is_clickable ? 'text-gray-500' : 'text-gray-400'" x-text="status.description || status.name"></p>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<script src="js/common.js"></script>
+<script>
+    function driverDashboard() {
+        return {
+            activeTab: 'pending',
+            loading: true,
+            driverName: 'Loading...',
+            pendingOrders: [],
+            activeOrders: [],
+            completedOrders: [],
+            errorMessage: '',
+            showStatusModal: false,
+            selectedOrder: null,
+            availableStatuses: [],
+
+            init() {
+                this.checkAuth();
+                this.loadDriverData();
+                this.loadOrders();
+            },
+
+            checkAuth() {
+                const token = localStorage.getItem('driver_token');
+                if (!token) {
+                    driverLogout();
+                }
+            },
+
+            loadDriverData() {
+                const driverData = JSON.parse(localStorage.getItem('driver_data') || '{}');
+                this.driverName = driverData.name || 'Driver';
+            },
+
+            async loadOrders() {
+                this.loading = true;
+                this.errorMessage = '';
+                const token = localStorage.getItem('driver_token');
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/driver/orders`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                        }
+                    });
+
+                    const data = await handleDriverApiResponse(response, 'Failed to load orders.');
+
+                    if (!data) {
+                        return;
+                    }
+
+                    if (data.error) {
+                        this.pendingOrders = [];
+                        this.activeOrders = [];
+                        this.completedOrders = [];
+                        this.errorMessage = data.message;
+                    } else {
+                        this.pendingOrders = data.pending || [];
+                        this.activeOrders = data.active || [];
+                        this.completedOrders = data.completed || [];
+                    }
+                } catch (error) {
+                    console.error('Error loading orders:', error);
+                    this.pendingOrders = [];
+                    this.activeOrders = [];
+                    this.completedOrders = [];
+                    this.errorMessage = 'Network error. Please try again.';
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            viewOrderDetail(orderId) {
+                window.location.href = `order-detail.html?id=${encodeURIComponent(orderId)}`;
+            },
+
+            openMaps(order) {
+                window.location.href = `order-map.html?id=${encodeURIComponent(order.id)}`;
+            },
+
+            async updateStatusModal(order) {
+                this.selectedOrder = order;
+                this.availableStatuses = [];
+                this.showStatusModal = true;
+                await this.loadAvailableStatuses(order.id);
+            },
+
+            async loadAvailableStatuses(orderId) {
+                const token = localStorage.getItem('driver_token');
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/driver/orders/${orderId}/statuses`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                        }
+                    });
+
+                    const data = await handleDriverApiResponse(response, 'Failed to load order statuses.');
+
+                    if (!data || data.error) {
+                        this.availableStatuses = [];
+                        return;
+                    }
+
+                    this.availableStatuses = data.data?.statuses || [];
+                } catch (error) {
+                    this.availableStatuses = [];
+                }
+            },
+
+            async updateOrderStatus(status) {
+                if (status === 'delivered') {
+                    const captured = await capturePod(this.selectedOrder.id);
+                    if (!captured) {
+                        return;
+                    }
+                }
+
+                const token = localStorage.getItem('driver_token');
+
+                showLoading();
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/driver/orders/${this.selectedOrder.id}/status`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ status })
+                    });
+
+                    const data = await handleDriverApiResponse(response, 'Failed to update status');
+
+                    if (!data) {
+                        return;
+                    }
+
+                    if (!data.error) {
+                        showToast('Status updated successfully', 'success');
+                        this.showStatusModal = false;
+                        this.availableStatuses = [];
+                        await this.loadOrders();
+                    } else {
+                        showToast(data.message || 'Failed to update status', 'error');
+                    }
+                } catch (error) {
+                    showToast('Network error. Please try again.', 'error');
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+    }
+</script>
+</body>
+</html>
