@@ -35,7 +35,13 @@ final class CategoryController extends ResponseController
                 },
             ])
                 ->where('status', 1)
-                ->whereIn('category_name', $categoryNames)
+                ->where(function ($query) use ($categoryNames) {
+                    foreach ($categoryNames as $name) {
+                        $trimmed = strtolower(trim((string) $name));
+                        $query->orWhereRaw('LOWER(category_name) = ?', [$trimmed])
+                            ->orWhereRaw('LOWER(category_type) = ?', [$trimmed]);
+                    }
+                })
                 ->get();
 
             // If no categories found, search in product names
